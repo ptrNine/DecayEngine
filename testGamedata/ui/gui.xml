@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    id="window1"
+    title="Test window"
+    position_x="30"
+    position_y="30"
+    width="200"
+    height="400"
+    bordered="false"
+    movable="true"
+    scalable="true"
+    closable="false"
+    minimizable="true"
+    noScrollbar="false"
+    titled="true"
+    autoHideScroll="false"
+    alwaysBackground="false"
+    scalerInLeft="false"
+    noInput="false"
+    isShown="false"
+>
+        
+</Window>
+
+<!--Layout, Group, Tree, ListView, Widget, Label, Button, CheckBox, RadioButton, 
+Selectable, Slider, ProgressBar, ColorPicker, Property, Chart, Popup, Combobox, Contextual, Tooltip
+Menu, Image-->

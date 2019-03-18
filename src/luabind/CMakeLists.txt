@@ -1,0 +1,1 @@
+#set(DECAY_EXECUTABLE "${DECAY_EXECUTABLE} LuaContext.cpp")

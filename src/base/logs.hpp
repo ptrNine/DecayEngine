@@ -1,0 +1,7 @@
+#ifndef DECAYENGINE_LOGS_HPP
+#define DECAYENGINE_LOGS_HPP
+
+class Logger {
+};
+
+#endif //DECAYENGINE_LOGS_HPP
