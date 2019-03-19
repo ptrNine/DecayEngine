@@ -1,204 +1,11 @@
 #ifndef DECAYENGINE_STRING_HPP
 #define DECAYENGINE_STRING_HPP
 
-#include <ostream>
-#include <string_view>
-#include <utility>
-#include <cstring>
+#include "cp_string.hpp"
 #include "../baseTypes.hpp"
 #include "../concepts.hpp"
 
-#define SCA static constexpr auto
-
 namespace ftl {
-    namespace const_str_detail {
-        template<typename CharT, CharT... _Str>
-        constexpr CharT const storage[sizeof...(_Str) + 1] = {_Str..., CharT(0)};
-
-        template <typename CharT>
-        constexpr const CharT* delim();
-
-        template <>
-        constexpr const Char8* delim() { return "/"; }
-
-        template <>
-        constexpr const Char16* delim() { return u"/"; }
-
-        template <>
-        constexpr const Char32* delim() { return U"/"; }
-
-    }
-
-    /**
-     * @brief Compile-time string implementation.
-     *
-     * Support char, char16_t and char32_t strings. <br>
-     * For creating use CS macro: <br><br>
-     *     auto str   = CS("More compile time shit please"); <br>
-     *     auto str16 = CS(u"Abcdefj"); <br><br>
-     *     // prints "More compile time shit please!!!!!!" <br>
-     *     std::cout << str + CS("!!!!!!") << std::endl;
-     */
-    template<typename CharT, CharT... _Str>
-    struct ConstexprString {
-        static_assert(
-            concepts::any_of<CharT, Char8, Char16, Char32>,
-            "String must contains char symbols only"
-        );
-
-        /// @return size of constant string
-        SCA size() { return sizeof...(_Str); }
-
-        /// @return C-style string
-        SCA c_str() {
-            return &const_str_detail::storage<CharT, _Str...>[0];
-        }
-
-        /// @return std::base_string_view string
-        SCA str_view() {
-            return std::basic_string_view<CharT>{c_str()};
-        }
-
-        /**
-         * Getting symbol by pos with compile-time bounds check
-         * @tparam _Pos - symbol position
-         * @return symbol
-         */
-        template <std::size_t _Pos>
-        SCA get() {
-            static_assert(_Pos < sizeof...(_Str), "Index out of bounds");
-            return const_str_detail::storage<CharT, _Str...>[_Pos];
-        }
-
-        SCA front() {
-            return const_str_detail::storage<CharT, _Str...>[0];
-        }
-
-        SCA back() {
-            constexpr auto size = sizeof...(_Str);
-            return const_str_detail::storage<CharT, _Str...>[size == 0 ? 0 : size - 1];
-        }
-
-        template <std::size_t _Pos, std::size_t ...idx>
-        SCA cut_l(std::index_sequence<idx...>) {
-            return ftl::ConstexprString<CharT, const_str_detail::storage<CharT, _Str...>[idx + _Pos]...>{};
-        }
-        /**
-         * Truncate left side before position
-         * @tparam _Pos - position
-         * @return truncated constexpr string
-         */
-        template <std::size_t _Pos>
-        SCA cut_l() {
-            return cut_l<_Pos>(std::make_index_sequence<sizeof...(_Str) - _Pos>{});
-        }
-
-
-        template <std::size_t _Pos, std::size_t ...idx>
-        SCA cut_r(std::index_sequence<idx...>) {
-            return ftl::ConstexprString<CharT, const_str_detail::storage<CharT, _Str...>[idx]...>{};
-        }
-        /**
-         * Truncate left side after position
-         * @tparam _Pos - position
-         * @return truncated constexpr string
-         */
-        template <std::size_t _Pos>
-        SCA cut_r() {
-            return cut_r<_Pos>(std::make_index_sequence<sizeof...(_Str) - _Pos>{});
-        }
-
-        /**
-         * Hash value depends on size of char symbol!
-         * @return 64-bit FNV-1a hash
-         */
-        SCA hash() {
-            U64 hsh = 14695981039346656037ULL;
-            if constexpr (std::is_same_v<CharT, Char8>) {
-                (((hsh ^= _Str) *= 1099511628211ULL), ...);
-            }
-            else if constexpr (std::is_same_v<CharT, Char16>) {
-                ((
-                        ((hsh ^= (_Str >> 8     )) *= 1099511628211ULL),
-                        ((hsh ^= (_Str &  0x00FF)) *= 1099511628211ULL)
-                ), ...);
-            }
-            else if constexpr (std::is_same_v<CharT, Char32>) {
-                ((
-                        ((hsh ^= ( _Str >> 24        )) *= 1099511628211ULL),
-                        ((hsh ^= ((_Str >> 16) & 0xFF)) *= 1099511628211ULL),
-                        ((hsh ^= ((_Str >> 8 ) & 0xFF)) *= 1099511628211ULL),
-                        ((hsh ^= ( _Str        & 0xFF)) *= 1099511628211ULL)
-                ), ...);
-            }
-            return hsh;
-        }
-
-
-        // Operators
-
-        constexpr auto operator[](std::size_t&& pos) const {
-            return const_str_detail::storage<CharT, _Str...>[pos];
-        }
-
-        template <CharT... Rhs>
-        constexpr auto operator+ (ConstexprString<CharT, Rhs...>) const {
-            return ConstexprString<CharT, _Str..., Rhs...>();
-        }
-
-        template <CharT... _Rhs>
-        constexpr auto operator/ (ConstexprString<CharT, _Rhs...>) const {
-            if constexpr (
-                    const_str_detail::storage<CharT, _Str...>[sizeof...(_Str) - 1] != '/' &&
-                    const_str_detail::storage<CharT, _Rhs...>[0] != '/'
-                    )
-                return ConstexprString<CharT, _Str..., CharT('/'), _Rhs...>();
-            else if constexpr (
-                    const_str_detail::storage<CharT, _Str...>[sizeof...(_Str) - 1] == '/' &&
-                    const_str_detail::storage<CharT, _Rhs...>[0] == '/'
-                    )
-                return ConstexprString<CharT, _Str...>() + ConstexprString<CharT, _Rhs...>().template cut_l<1>();
-            else
-                return ConstexprString<CharT, _Str..., _Rhs...>();
-        }
-
-        template <CharT... _Rhs>
-        constexpr bool operator== (const ConstexprString<CharT, _Rhs...>) const {
-            if constexpr (sizeof...(_Str) != sizeof...(_Rhs))
-                return false;
-            else
-                return ((_Str == _Rhs) && ...);
-        }
-
-        template <CharT... _Rhs>
-        constexpr bool operator!= (const ConstexprString<CharT, _Rhs...>) const {
-            return !(operator==(ConstexprString<CharT, _Rhs...>{}));
-        }
-
-        friend std::ostream& operator<< (std::ostream& os, const ConstexprString<CharT, _Str...>) {
-            os << ConstexprString<CharT, _Str...>::c_str();
-            return os;
-        }
-    };
-
-
-    namespace const_str_detail {
-        template<typename CharT, typename Arr, std::size_t ...idx>
-        constexpr ConstexprString<CharT, Arr::get()[idx]...>
-        buildHelper(CharT, Arr, std::index_sequence<idx...>) {
-            return {};
-        }
-
-        #define CS(STR) \
-        ftl::const_str_detail::buildHelper( \
-            (STR)[0], \
-            []{ struct Arr { static constexpr auto get() { return STR; } }; return Arr{}; }(), \
-            std::make_index_sequence<sizeof((STR)) / sizeof((STR)[0]) - 1>{})
-
-    }
-
-
-
     template <typename CharT>
     class StringBase {
         static_assert(
@@ -207,9 +14,16 @@ namespace ftl {
         );
 
         using SizeType = typename std::basic_string<CharT>::size_type;
+        using IterT    = typename std::basic_string<CharT>::iterator;
+        using C_IterT  = typename std::basic_string<CharT>::const_iterator;
+        using R_IterT  = typename std::basic_string<CharT>::const_iterator;
+        using CR_IterT = typename std::basic_string<CharT>::const_reverse_iterator;
 
     public:
-        StringBase() = default;
+        static constexpr auto npos = std::basic_string<CharT>::npos;
+
+
+        // Constructors
 
         StringBase(const StringBase& str)                           : _str_v(str._str_v) {}
         StringBase(const StringBase& str, SizeType pos)             : _str_v(str._str_v, pos) {}
@@ -220,21 +34,21 @@ namespace ftl {
         explicit StringBase(std::basic_string<CharT>&& str)           : _str_v(std::move(str)) {}
         explicit StringBase(std::basic_string_view<CharT>&& str)      : _str_v(std::move(str)) {}
 
-        explicit
-        StringBase(const CharT* str)                                : _str_v(str) {}
-        StringBase(const CharT* str, SizeType n)                    : _str_v(str, n) {}
-        StringBase(SizeType n, CharT c)                             : _str_v(c, n) {}
-        StringBase(std::initializer_list<CharT> l)                  : _str_v(l) {}
-        StringBase(StringBase&& str) noexcept                       : _str_v(std::move(str._str_v)) {}
+        StringBase(SizeType n, CharT c)            : _str_v(c, n) {}
+        StringBase(std::initializer_list<CharT> l) : _str_v(l) {}
+        StringBase(StringBase&& str) noexcept      : _str_v(std::move(str._str_v)) {}
 
         template<typename InputIterator>
-        StringBase(InputIterator beg, InputIterator end)            : _str_v(beg, end) {}
+        StringBase(InputIterator beg, InputIterator end) : _str_v(beg, end) {}
 
         template <std::size_t _Size>
-        explicit StringBase(const CharT(&str)[_Size])               : _str_v(str) {}
+        explicit StringBase(const CharT(&str)[_Size]) : _str_v(str, _Size ? _Size-1 : 0) {}
 
         template <CharT... _Str>
-        explicit StringBase(ConstexprString<CharT, _Str...> str)    : StringBase(str.str_view()) {}
+        explicit StringBase(ConstexprString<CharT, _Str...> str) : StringBase(str.str_view()) {}
+
+
+        // Basic methods
 
         inline auto max_size() const { return _str_v.max_size(); }
         inline auto lenght  () const { return _str_v.length(); }
@@ -246,9 +60,9 @@ namespace ftl {
         inline auto data    ()       { return _str_v.data(); }
         inline auto clear   ()       { _str_v.clear(); return *this; }
 
-        inline auto resize  (SizeType size)          { _str_v.resize(size); return *this; }
-        inline auto resize  (SizeType size, CharT c) { _str_v.resize(size, c); return *this; }
-        inline auto reserve (SizeType size)          { _str_v.reserve(size); return *this; }
+        inline auto resize  (SizeType size)          -> StringBase& { _str_v.resize(size); return *this; }
+        inline auto resize  (SizeType size, CharT c) -> StringBase& { _str_v.resize(size, c); return *this; }
+        inline auto reserve (SizeType size)          -> StringBase& { _str_v.reserve(size); return *this; }
 
         inline auto at    (SizeType pos) -> CharT&             { return _str_v.at(pos); }
         inline auto at    (SizeType pos) const -> const CharT& { return _str_v.at(pos); }
@@ -259,8 +73,14 @@ namespace ftl {
 
         inline auto shrink_to_fit()     { _str_v.shrink_to_fit(); return *this; }
 
+        inline auto push_back(CharT c) -> StringBase& { _str_v.push_back(c); return *this; }
+        inline auto pop_back ()        -> StringBase& { _str_v.pop_back(); return *this; }
+
+        inline void swap    (StringBase& str) { _str_v.swap(str._str_v); }
+
 
         // Iterators
+
         inline auto begin   ()       { return _str_v.begin(); }
         inline auto end     ()       { return _str_v.end(); }
         inline auto rbegin  ()       { return _str_v.rbegin(); }
@@ -269,7 +89,190 @@ namespace ftl {
         inline auto cend    () const { return _str_v.cend(); }
         inline auto crbegin () const { return _str_v.crbegin(); }
         inline auto crend   () const { return _str_v.crend(); }
+        inline auto begin   () const { return _str_v.begin(); }
+        inline auto end     () const { return _str_v.end(); }
+        inline auto rbegin  () const { return _str_v.rbegin(); }
+        inline auto rend    () const { return _str_v.rend(); }
 
+
+        // Algorithms
+
+        inline auto insert(C_IterT start, SizeType n, CharT c) {
+            return _str_v.insert(start, n, c);
+        }
+        template <typename InputIterT>
+        inline auto insert(C_IterT start, InputIterT beg, InputIterT end) {
+            return _str_v.insert(start, beg, end);
+        }
+        inline auto insert(C_IterT start, CharT c) {
+            return _str_v.insert(start, c);
+        }
+        inline void insert(IterT start, std::initializer_list<CharT> l) {
+            _str_v.insert(start, l);
+        }
+        inline auto insert(SizeType pos, const StringBase& str) -> StringBase& {
+            _str_v.insert(pos, str._str_v);
+            return *this;
+        }
+        inline auto insert(SizeType pos, const StringBase& str, SizeType pos2, SizeType n) -> StringBase& {
+            _str_v.insert(pos, str._str_v, pos2, n);
+            return *this;
+        }
+        template<SizeType _Size>
+        inline auto insert(SizeType pos, const CharT(&str)[_Size], SizeType n = _Size ? _Size-1 : 0) -> StringBase& {
+            _str_v.insert(pos, str, n);
+            return *this;
+        }
+        inline auto insert(SizeType pos, SizeType n, CharT c) -> StringBase& {
+            _str_v.insert(pos, n, c);
+            return *this;
+        }
+        template<CharT... _Str>
+        inline auto insert(SizeType pos, const ConstexprString<CharT, _Str...> str) -> StringBase& {
+            _str_v.insert(pos, str.c_str(), sizeof...(_Str));
+            return *this;
+        }
+        template<CharT... _Str>
+        inline auto insert(SizeType pos,
+                           const ConstexprString<CharT, _Str...> str,
+                           SizeType pos2,
+                           SizeType n = sizeof...(_Str)
+        ) -> StringBase& {
+            _str_v.insert(pos, str.c_str(), pos2, n);
+            return *this;
+        }
+
+        inline auto erase(SizeType pos, SizeType n = npos) -> StringBase& {
+            _str_v.erase(pos, n);
+            return *this;
+        }
+        inline auto erase(C_IterT pos) {
+            return _str_v.erase(pos);
+        }
+        inline auto erase(C_IterT first, C_IterT last) {
+            return _str_v.erase(first, last);
+        }
+
+        inline auto replace(SizeType pos, SizeType n, const StringBase& str) -> StringBase& {
+            _str_v.replace(pos, n, str._str_v);
+            return *this;
+        }
+        inline auto replace(SizeType pos,  SizeType n, const StringBase& str,
+                            SizeType pos2, SizeType n2 = npos) -> StringBase& {
+            _str_v.replace(pos, n, str._str_v, pos2, n2);
+            return *this;
+        }
+        template <SizeType _Size>
+        inline auto replace(SizeType pos, SizeType n, const CharT (&str)[_Size],
+                            SizeType n2 = _Size ? _Size-1 : 0) -> StringBase& {
+            _str_v.replace(pos, n, str, n2);
+            return *this;
+        }
+        template <CharT... _Str>
+        inline auto replace(SizeType pos, SizeType n, const ConstexprString<CharT, _Str...> str,
+                            SizeType n2 = sizeof...(_Str)) -> StringBase& {
+            _str_v.replace(pos, n, str.c_str(), n2);
+            return *this;
+        }
+        inline auto replace(SizeType pos, SizeType n1, SizeType n2, CharT c) -> StringBase& {
+            _str_v.replace(pos, n1, n2, c);
+            return *this;
+        }
+        inline auto replace(C_IterT i1, C_IterT i2, const StringBase& str) -> StringBase& {
+            _str_v.replace(i1, i2, str._str_v);
+            return *this;
+        }
+        template <SizeType _Size>
+        inline auto replace(C_IterT i1, C_IterT i2, const CharT (&str)[_Size],
+                            SizeType n2 = _Size ? _Size-1 : 0) -> StringBase& {
+            _str_v.replace(i1, i2, str, n2);
+            return *this;
+        }
+        template <CharT... _Str>
+        inline auto replace(C_IterT i1, C_IterT i2, const ConstexprString<CharT, _Str...> str,
+                            SizeType n2 = sizeof...(_Str)) -> StringBase& {
+            _str_v.replace(i1, i2, str.c_str(), n2);
+            return *this;
+        }
+        inline auto replace(C_IterT i1, C_IterT i2, SizeType n2, CharT c) -> StringBase& {
+            _str_v.replace(i1, i2, n2, c);
+            return *this;
+        }
+        template <typename InputIterT>
+        inline auto replace(C_IterT i1, C_IterT i2, InputIterT s1, InputIterT s2) -> StringBase& {
+            _str_v.replace(i1, i2, s1, s2);
+            return *this;
+        }
+        inline auto replace(C_IterT i1, C_IterT i2, std::initializer_list<CharT> l) -> StringBase& {
+            _str_v.replace(i1, i2, l);
+            return *this;
+        }
+
+        #define FIND_METHODS_GENERATOR(METHOD_NAME)                                                     \
+        template <SizeType _Size>                                                                       \
+        inline auto METHOD_NAME(const CharT (&str)[_Size], SizeType pos = 0,                            \
+                                SizeType n = _Size ? _Size-1 : 0) const {                               \
+            return _str_v.METHOD_NAME(str, pos, n);                                                     \
+        }                                                                                               \
+        template <CharT... _Str>                                                                        \
+        inline auto METHOD_NAME(const ConstexprString<CharT, _Str...> str, SizeType pos = 0,            \
+                                SizeType n = sizeof...(_Str)) const {                                   \
+            return _str_v.METHOD_NAME(str.c_str(), pos, n);                                             \
+        }                                                                                               \
+        inline auto METHOD_NAME(const StringBase& str, SizeType pos = 0) const {                        \
+            return _str_v.METHOD_NAME(str._str_v, pos);                                                 \
+        }                                                                                               \
+        inline auto METHOD_NAME(CharT c, SizeType pos = 0) const {                                      \
+            return _str_v.METHOD_NAME(c, pos);                                                          \
+        }
+
+        FIND_METHODS_GENERATOR(find);
+        FIND_METHODS_GENERATOR(rfind);
+        FIND_METHODS_GENERATOR(find_first_of);
+        FIND_METHODS_GENERATOR(find_last_of);
+        FIND_METHODS_GENERATOR(find_first_not_of);
+        FIND_METHODS_GENERATOR(find_last_not_of);
+
+        inline auto substr(SizeType pos, SizeType n = npos) const {
+            return StringBase(_str_v.substr(pos, n));
+        }
+
+        inline auto compare(const StringBase& str) const {
+            return _str_v.compare(str._str_v);
+        }
+        template<SizeType _Size>
+        inline auto compare(const CharT(&str)[_Size]) const {
+            return _str_v.compare(str);
+        }
+        template<CharT... _Str>
+        inline auto compare(const ConstexprString<CharT, _Str...> str) const {
+            return _str_v.compare(str.c_str());
+        }
+        inline auto compare(SizeType pos, SizeType n, const StringBase& str) const {
+            return _str_v.compare(pos, n, str._str_v);
+        }
+        template<SizeType _Size>
+        inline auto compare(SizeType pos, SizeType n, const CharT(&str)[_Size]) const {
+            return _str_v.compare(pos, n, str);
+        }
+        template<CharT... _Str>
+        inline auto compare(SizeType pos, SizeType n, const ConstexprString<CharT, _Str...> str) const {
+            return _str_v.compare(pos, n, str.c_str());
+        }
+        inline auto compare(SizeType pos1, SizeType n1, const StringBase& str,
+                            SizeType pos2, SizeType n2) const {
+            return _str_v.compare(pos1, n1, str._str_v, pos2, n2);
+        }
+        template<SizeType _Size>
+        inline auto compare(SizeType pos1, SizeType n1, const CharT(&str)[_Size],
+                            SizeType pos2, SizeType n2) const {
+            return _str_v.compare(pos1, n1, str, std::basic_string_view(str, _Size));
+        }
+        template<CharT... _Str>
+        inline auto compare(SizeType pos1, SizeType n1, const ConstexprString<CharT, _Str...> str,
+                            SizeType pos2, SizeType n2) const {
+            return _str_v.compare(pos1, n1, str.str_view(), pos2, n2);
+        }
 
         // Operators
         inline auto operator==(const StringBase& str) const { return _str_v == str._str_v; }
@@ -410,8 +413,5 @@ namespace ftl {
     using String32 = StringBase<Char32>;
 
 } // namespace ftl
-
-
-#undef SCA  // static constexpr auto
 
 #endif //DECAYENGINE_STRING_HPP

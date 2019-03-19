@@ -1,6 +1,7 @@
-#include "gtest/gtest.h"
 #include "../base/ftl/string.hpp"
 #include "../base/ftl/vector.hpp"
+
+#include "gtest/gtest.h"
 
 TEST(StringTests, CompileTimeString) {
     constexpr auto str      = CS("string");
@@ -137,7 +138,7 @@ TEST(StringTests, StringBase) {
     auto cpath3 = String("path/") / CS("test/");
     auto cpath4 = String("path/") / CS("/test/");
 
-    ASSERT_EQ(str1, "string");
+    ASSERT_TRUE(str1 == "string");
     ASSERT_EQ(str2, CS("string"));
     ASSERT_EQ(str3, String("string"));
 
