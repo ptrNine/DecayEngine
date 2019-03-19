@@ -54,3 +54,72 @@ TEST(MathVectorTests, Vector2u) {
     ASSERT_EQ(vec2, Vector2u(3, 6));
     ASSERT_EQ(vec3, Vector2u(2, 5));
 }
+
+TEST(MathVectorTests, Vector2f) {
+    using ftl::Vector2f;
+
+    auto vec = Vector2f{2.5, 3.5};
+    auto& [x, y] = vec;
+    y += 1.5;
+
+    ASSERT_EQ(vec.x(), 2.5);
+    ASSERT_EQ(vec.y(), 5);
+
+    ASSERT_EQ(Vector2f(5.5, 5), vec + Vector2f(3, 0));
+    ASSERT_EQ(Vector2f(0, 0), vec - Vector2f(2.5, 5));
+    ASSERT_EQ(Vector2f(2.5, 2.5), Vector2f(0, 0) + 2.5);
+    ASSERT_EQ(Vector2f(1.5, 1.5), Vector2f(4, 4) - 2.5);
+    ASSERT_EQ(Vector2f(6, 6), Vector2f(1.5, 1.5) * 4);
+    ASSERT_EQ(Vector2f(2.3, 2.3), Vector2f(4.6, 4.6) / 2);
+
+    auto vec2 = Vector2f(4.5, 4.5);
+
+    vec2 += Vector2f(2.5, 4.5);
+    ASSERT_EQ(vec2, Vector2f(7, 9));
+
+    vec2 -= Vector2f(4.5, 2.5);
+    ASSERT_EQ(vec2, Vector2f(2.5, 6.5));
+
+    vec2 += 4.5;
+    ASSERT_EQ(vec2, Vector2f(7, 11));
+
+    vec2 -= 2.5;
+    ASSERT_EQ(vec2, Vector2f(4.5, 8.5));
+
+    vec2.y() -= 1;
+    vec2 /= 1.5;
+    ASSERT_EQ(vec2, Vector2f(3, 5));
+
+    vec2 *= 1.5;
+    ASSERT_EQ(vec2, Vector2f(4.5, 7.5));
+
+    auto vec3 = Vector2f(3.5, 2.5);
+
+    vec3 += Vector2f(1, 3);
+    ASSERT_EQ(vec3, Vector2f(4.5, 5.5));
+
+    vec3 -= Vector2f(2, 1);
+    ASSERT_EQ(vec3, Vector2f(2.5, 4.5));
+
+    vec3.set(0.4, 0.3);
+    ASSERT_EQ(vec3.magnitude2(), 0.25);
+
+    ASSERT_FLOAT_EQ(vec3.divProduct(Vector2f(-2, 2)), -0.2);
+
+    ASSERT_FLOAT_EQ(vec3.magnitude(), 0.5);
+
+    vec3.set(6, 8);
+    ASSERT_EQ(vec3.normalize(), Vector2f(0.6, 0.8));
+}
+
+TEST(MathVectorTests, Vector2Conversions) {
+    auto vec1 = ftl::Vector2T(4.5, 5.5);
+
+    ASSERT_FLOAT_EQ(vec1.x(), 4.5);
+    ASSERT_FLOAT_EQ(vec1.y(), 5.5);
+
+    auto vec2 = ftl::Vector2Convert<U8>(vec1);
+
+    ASSERT_EQ(vec2.x(), 4);
+    ASSERT_EQ(vec2.y(), 5);
+}

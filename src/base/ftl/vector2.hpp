@@ -29,11 +29,17 @@ namespace ftl {
 
 
     public:
-        ICA x() noexcept -> Type& { return _x; }
-        ICA y() noexcept -> Type& { return _y; }
+        ICA& set(Type x, Type y) noexcept {
+            _x = x;
+            _y = y;
+            return *this;
+        }
 
-        ICA x() const noexcept -> const Type& { return _x; }
-        ICA y() const noexcept -> const Type& { return _y; }
+        ICA& x() noexcept { return _x; }
+        ICA& y() noexcept { return _y; }
+
+        const ICA& x() const noexcept { return _x; }
+        const ICA& y() const noexcept { return _y; }
 
         // Same to '+', '-' ... operators
         ICA makeAdd(const Vector2& r) const {
@@ -181,14 +187,15 @@ namespace ftl {
         ICA fastMagnitude() { return 1 / fastInvMagnitude<_steps>(); }
 
         template<std::size_t _steps = 1>
-        ICA fastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
+        ICA& fastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
 
         ICA magnitude() { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
 
-        ICA normalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+        ICA& normalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
     };
 
 } // namespace ftl
+
 
 namespace std {
     template <typename Type>
@@ -216,12 +223,27 @@ namespace ftl {
     using Vector2d   = Vector2Flt<Float64>;
     using Vector2f32 = Vector2Flt<Float32>;
     using Vector2f64 = Vector2Flt<Float64>;
+
+    template <typename Type, std::enable_if_t<concepts::integers<Type>>...>
+    ICA Vector2T(Type x, Type y) {
+        return Vector2<Type>(x, y);
+    }
+    template <typename Type, std::enable_if_t<concepts::floats<Type>>...>
+    ICA Vector2T(Type x, Type y) {
+        return Vector2Flt<Type>(x, y);
+    }
+
+    template <typename OutType, typename InType, std::enable_if_t<concepts::integers<InType>>...>
+    ICA Vector2Convert(const Vector2<InType>& vec) {
+        return Vector2T<OutType>(vec.x(), vec.y());
+    }
+    template <typename OutType, typename InType, std::enable_if_t<concepts::floats<InType>>...>
+    ICA Vector2Convert(const Vector2Flt<InType>& vec) {
+        return Vector2T<OutType>(vec.x(), vec.y());
+    }
+
 } // namespace ftl
 
-
-
 #undef ICA // inline constexpr auto
-
-
 
 #endif //UIBUILDER_VECTOR2_HPP
