@@ -1,4 +1,5 @@
 #include "../base/ftl/vector2.hpp"
+#include "../base/ftl/vector3.hpp"
 #include <gtest/gtest.h>
 
 TEST(MathVectorTests, Vector2u) {
@@ -109,7 +110,9 @@ TEST(MathVectorTests, Vector2f) {
     ASSERT_FLOAT_EQ(vec3.magnitude(), 0.5);
 
     vec3.set(6, 8);
-    ASSERT_EQ(vec3.normalize(), Vector2f(0.6, 0.8));
+    ASSERT_EQ(vec3.makeNormalize(), Vector2f(0.6, 0.8));
+
+    auto vec4 = vec3.normalize();
 }
 
 TEST(MathVectorTests, Vector2Conversions) {

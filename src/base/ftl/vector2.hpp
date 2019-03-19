@@ -42,62 +42,62 @@ namespace ftl {
         const ICA& y() const noexcept { return _y; }
 
         // Same to '+', '-' ... operators
-        ICA makeAdd(const Vector2& r) const {
+        ICA add(const Vector2& r) const {
             return Vector2(_x + r._x, _y + r._y);
         }
 
-        ICA makeSub(const Vector2& r) const {
+        ICA sub(const Vector2& r) const {
             return Vector2(_x - r._x, _y - r._y);
         }
 
-        ICA makeScalarAdd(const Type& val) const {
+        ICA scalarAdd(const Type& val) const {
             return Vector2(_x + val, _y + val);
         }
 
-        ICA makeScalarSub(const Type& val) const {
+        ICA scalarSub(const Type& val) const {
             return Vector2(_x - val, _y - val);
         }
 
-        ICA makeScalarMul(const Type& val) const {
+        ICA scalarMul(const Type& val) const {
             return Vector2(_x * val, _y * val);
         }
 
-        ICA makeScalarDiv(const Type& val) const {
+        ICA scalarDiv(const Type& val) const {
             return Vector2(_x / val, _y / val);
         }
 
         // Same to '+=', '-=', ... operators
-        ICA& add(const Vector2& r) {
+        ICA& makeAdd(const Vector2& r) {
             _x += r._x;
             _y += r._y;
             return *this;
         }
 
-        ICA& sub(const Vector2& r) {
+        ICA& makeSub(const Vector2& r) {
             _x -= r._x;
             _y -= r._y;
             return *this;
         }
 
-        ICA& scalarAdd(const Type& val) {
+        ICA& makeScalarAdd(const Type& val) {
             _x += val;
             _y += val;
             return *this;
         }
 
-        ICA& scalarSub(const Type& val) {
+        ICA& makeScalarSub(const Type& val) {
             _x -= val;
             _y -= val;
             return *this;
         }
 
-        ICA& scalarMul(const Type& val) {
+        ICA& makeScalarMul(const Type& val) {
             _x *= val;
             _y *= val;
             return *this;
         }
 
-        ICA& scalarDiv(const Type& val) {
+        ICA& makeScalarDiv(const Type& val) {
             _x /= val;
             _y /= val;
             return *this;
@@ -115,22 +115,22 @@ namespace ftl {
         ICA operator!=(const Vector2& r) const { return !(*this == r); }
 
         // Vectors
-        ICA  operator+(const Vector2& r) const { return makeAdd(r); }
-        ICA  operator-(const Vector2& r) const { return makeSub(r); }
+        ICA  operator+(const Vector2& r) const { return add(r); }
+        ICA  operator-(const Vector2& r) const { return sub(r); }
 
-        ICA& operator+=(const Vector2& r) { return add(r); }
-        ICA& operator-=(const Vector2& r) { return sub(r); }
+        ICA& operator+=(const Vector2& r) { return makeAdd(r); }
+        ICA& operator-=(const Vector2& r) { return makeSub(r); }
 
         // Scalars
-        ICA  operator+(const Type& val) const { return makeScalarAdd(val); }
-        ICA  operator-(const Type& val) const { return makeScalarSub(val); }
-        ICA  operator*(const Type& val) const { return makeScalarMul(val); }
-        ICA  operator/(const Type& val) const { return makeScalarDiv(val); }
+        ICA  operator+(const Type& val) const { return scalarAdd(val); }
+        ICA  operator-(const Type& val) const { return scalarSub(val); }
+        ICA  operator*(const Type& val) const { return scalarMul(val); }
+        ICA  operator/(const Type& val) const { return scalarDiv(val); }
 
-        ICA& operator+=(const Type& val) { return scalarAdd(val); }
-        ICA& operator-=(const Type& val) { return scalarSub(val); }
-        ICA& operator*=(const Type& val) { return scalarMul(val); }
-        ICA& operator/=(const Type& val) { return scalarDiv(val); }
+        ICA& operator+=(const Type& val) { return makeScalarAdd(val); }
+        ICA& operator-=(const Type& val) { return makeScalarSub(val); }
+        ICA& operator*=(const Type& val) { return makeScalarMul(val); }
+        ICA& operator/=(const Type& val) { return makeScalarDiv(val); }
 
         template<SizeT _pos>
         friend constexpr auto get(Vector2<Type> &v) noexcept -> Type & {
@@ -179,19 +179,21 @@ namespace ftl {
         explicit
         Vector2Flt(Type val) : inherited(val) {}
 
-
         template<std::size_t _steps = 1>
         ICA fastInvMagnitude() { return math::fast_inv_sqrt<_steps>(this->magnitude2()); }
 
         template<std::size_t _steps = 1>
         ICA fastMagnitude() { return 1 / fastInvMagnitude<_steps>(); }
 
-        template<std::size_t _steps = 1>
-        ICA& fastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
-
         ICA magnitude() { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
 
-        ICA& normalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+        template<std::size_t _steps = 1>
+        ICA& makeFastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
+        template<std::size_t _steps = 1>
+        ICA fastNormalize() { Vector2Flt((*this) * fastInvMagnitude<_steps>()); }
+
+        ICA& makeNormalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+        ICA  normalize()     { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
     };
 
 } // namespace ftl
