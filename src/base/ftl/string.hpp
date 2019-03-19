@@ -24,6 +24,7 @@ namespace ftl {
 
 
         // Constructors
+        StringBase() = default;
 
         StringBase(const StringBase& str)                           : _str_v(str._str_v) {}
         StringBase(const StringBase& str, SizeType pos)             : _str_v(str._str_v, pos) {}
@@ -94,6 +95,15 @@ namespace ftl {
         inline auto rbegin  () const { return _str_v.rbegin(); }
         inline auto rend    () const { return _str_v.rend(); }
 
+        inline auto assign_c_str(const CharT* str) -> StringBase& {
+            _str_v.assign(str);
+            return *this;
+        }
+
+        inline auto assign_c_str(const CharT* str, SizeType n) -> StringBase& {
+            _str_v.assign(str, n);
+            return *this;
+        }
 
         // Algorithms
 
@@ -114,17 +124,20 @@ namespace ftl {
             _str_v.insert(pos, str._str_v);
             return *this;
         }
-        inline auto insert(SizeType pos, const StringBase& str, SizeType pos2, SizeType n) -> StringBase& {
+        inline auto insert(SizeType pos, const StringBase& str,
+                           SizeType pos2, SizeType n = npos) -> StringBase& {
             _str_v.insert(pos, str._str_v, pos2, n);
             return *this;
         }
         template<SizeType _Size>
-        inline auto insert(SizeType pos, const CharT(&str)[_Size], SizeType n = _Size ? _Size-1 : 0) -> StringBase& {
-            _str_v.insert(pos, str, n);
+        inline auto insert(SizeType pos, const CharT(&str)[_Size]) -> StringBase& {
+            _str_v.insert(pos, str, _Size ? _Size-1 : 0);
             return *this;
         }
-        inline auto insert(SizeType pos, SizeType n, CharT c) -> StringBase& {
-            _str_v.insert(pos, n, c);
+        template<SizeType _Size>
+        inline auto insert(SizeType pos, const CharT(&str)[_Size],
+                           SizeType pos2, SizeType n) -> StringBase& {
+            _str_v.insert(pos, &str[0] + pos2, n);
             return *this;
         }
         template<CharT... _Str>
@@ -133,12 +146,14 @@ namespace ftl {
             return *this;
         }
         template<CharT... _Str>
-        inline auto insert(SizeType pos,
-                           const ConstexprString<CharT, _Str...> str,
-                           SizeType pos2,
-                           SizeType n = sizeof...(_Str)
+        inline auto insert(SizeType pos, const ConstexprString<CharT, _Str...> str,
+                           SizeType pos2, SizeType n
         ) -> StringBase& {
             _str_v.insert(pos, str.c_str(), pos2, n);
+            return *this;
+        }
+        inline auto insert(SizeType pos, SizeType n, CharT c) -> StringBase& {
+            _str_v.insert(pos, n, c);
             return *this;
         }
 
@@ -164,14 +179,14 @@ namespace ftl {
         }
         template <SizeType _Size>
         inline auto replace(SizeType pos, SizeType n, const CharT (&str)[_Size],
-                            SizeType n2 = _Size ? _Size-1 : 0) -> StringBase& {
-            _str_v.replace(pos, n, str, n2);
+                            SizeType pos2, SizeType n2) -> StringBase& {
+            _str_v.replace(pos, n, &str[0] + pos2, n2);
             return *this;
         }
         template <CharT... _Str>
         inline auto replace(SizeType pos, SizeType n, const ConstexprString<CharT, _Str...> str,
-                            SizeType n2 = sizeof...(_Str)) -> StringBase& {
-            _str_v.replace(pos, n, str.c_str(), n2);
+                            SizeType pos2, SizeType n2) -> StringBase& {
+            _str_v.replace(pos, n, str.c_str() + pos2, n2);
             return *this;
         }
         inline auto replace(SizeType pos, SizeType n1, SizeType n2, CharT c) -> StringBase& {
@@ -185,13 +200,25 @@ namespace ftl {
         template <SizeType _Size>
         inline auto replace(C_IterT i1, C_IterT i2, const CharT (&str)[_Size],
                             SizeType n2 = _Size ? _Size-1 : 0) -> StringBase& {
-            _str_v.replace(i1, i2, str, n2);
+            _str_v.replace(i1, i2, &str[0], n2);
+            return *this;
+        }
+        template <SizeType _Size>
+        inline auto replace(C_IterT i1, C_IterT i2, const CharT (&str)[_Size],
+                            SizeType pos, SizeType n2) -> StringBase& {
+            _str_v.replace(i1, i2, &str[0] + pos, n2);
             return *this;
         }
         template <CharT... _Str>
         inline auto replace(C_IterT i1, C_IterT i2, const ConstexprString<CharT, _Str...> str,
                             SizeType n2 = sizeof...(_Str)) -> StringBase& {
             _str_v.replace(i1, i2, str.c_str(), n2);
+            return *this;
+        }
+        template <CharT... _Str>
+        inline auto replace(C_IterT i1, C_IterT i2, const ConstexprString<CharT, _Str...> str,
+                            SizeType pos, SizeType n2) -> StringBase& {
+            _str_v.replace(i1, i2, str.c_str() + pos, n2);
             return *this;
         }
         inline auto replace(C_IterT i1, C_IterT i2, SizeType n2, CharT c) -> StringBase& {
@@ -208,30 +235,30 @@ namespace ftl {
             return *this;
         }
 
-        #define FIND_METHODS_GENERATOR(METHOD_NAME)                                                     \
+        #define FIND_METHODS_GENERATOR(METHOD_NAME, POS)                                                \
         template <SizeType _Size>                                                                       \
-        inline auto METHOD_NAME(const CharT (&str)[_Size], SizeType pos = 0,                            \
+        inline auto METHOD_NAME(const CharT (&str)[_Size], SizeType pos = POS,                          \
                                 SizeType n = _Size ? _Size-1 : 0) const {                               \
             return _str_v.METHOD_NAME(str, pos, n);                                                     \
         }                                                                                               \
         template <CharT... _Str>                                                                        \
-        inline auto METHOD_NAME(const ConstexprString<CharT, _Str...> str, SizeType pos = 0,            \
+        inline auto METHOD_NAME(const ConstexprString<CharT, _Str...> str, SizeType pos = POS,          \
                                 SizeType n = sizeof...(_Str)) const {                                   \
             return _str_v.METHOD_NAME(str.c_str(), pos, n);                                             \
         }                                                                                               \
-        inline auto METHOD_NAME(const StringBase& str, SizeType pos = 0) const {                        \
+        inline auto METHOD_NAME(const StringBase& str, SizeType pos = POS) const {                      \
             return _str_v.METHOD_NAME(str._str_v, pos);                                                 \
         }                                                                                               \
-        inline auto METHOD_NAME(CharT c, SizeType pos = 0) const {                                      \
+        inline auto METHOD_NAME(CharT c, SizeType pos = POS) const {                                    \
             return _str_v.METHOD_NAME(c, pos);                                                          \
         }
 
-        FIND_METHODS_GENERATOR(find);
-        FIND_METHODS_GENERATOR(rfind);
-        FIND_METHODS_GENERATOR(find_first_of);
-        FIND_METHODS_GENERATOR(find_last_of);
-        FIND_METHODS_GENERATOR(find_first_not_of);
-        FIND_METHODS_GENERATOR(find_last_not_of);
+        FIND_METHODS_GENERATOR(find, 0);
+        FIND_METHODS_GENERATOR(rfind, npos);
+        FIND_METHODS_GENERATOR(find_first_of, 0);
+        FIND_METHODS_GENERATOR(find_last_of, npos);
+        FIND_METHODS_GENERATOR(find_first_not_of, 0);
+        FIND_METHODS_GENERATOR(find_last_not_of, npos);
 
         inline auto substr(SizeType pos, SizeType n = npos) const {
             return StringBase(_str_v.substr(pos, n));
@@ -403,6 +430,11 @@ namespace ftl {
 
         inline auto operator[](SizeType pos)       -> CharT&       { return _str_v[pos]; }
         inline auto operator[](SizeType pos) const -> const CharT& { return _str_v[pos]; }
+
+        friend std::ostream& operator<< (std::ostream& os, const StringBase& str) {
+            os << str.c_str();
+            return os;
+        }
 
     protected:
         std::basic_string<CharT> _str_v;

@@ -9,12 +9,14 @@
 
 #include <boost/hana.hpp>
 #include <variant>
-
+#include "src/base/ftl/vector2.hpp"
 
 int main() {
 
-    std::string_view a("dsfd");
-    a.size();
+    auto a = math::fast_inv_sqrt<1>(25.0);
+
+    std::cout << 1/a << std::endl;
+
 
     //UIBuilder builder("/mnt/sda6-drive/Repos/DecayEngine/testGamedata/ui/gui.xml");
     //builder.present(nullptr);

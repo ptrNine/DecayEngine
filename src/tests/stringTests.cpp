@@ -196,6 +196,9 @@ TEST(StringTests, StringBase) {
     ASSERT_EQ(cpath2, "path/test/kek");
     ASSERT_EQ(cpath3, "path/test/kek");
     ASSERT_EQ(cpath4, "path/test/kek");
+
+    ASSERT_EQ(String().assign_c_str("str"), "str");
+    ASSERT_EQ(String().assign_c_str("str", 3), "str");
 }
 
 
@@ -293,4 +296,147 @@ TEST(StringTests, StringBase16) {
     ASSERT_EQ(cpath2, u"path/test/kek");
     ASSERT_EQ(cpath3, u"path/test/kek");
     ASSERT_EQ(cpath4, u"path/test/kek");
+}
+
+TEST(StringTests, Algorithm) {
+    using String = ftl::StringBase<char>;
+    auto str1  = String("string");
+    auto str2  = String("string");
+    auto str3  = String("string");
+    auto str4  = String("string");
+    auto str5  = String("string");
+    auto str6  = String("string");
+    auto str7  = String("string");
+    auto str8  = String("string");
+    auto str9  = String("string");
+    auto str10 = String("string");
+    auto str11 = String("string");
+    auto str12 = String("string");
+    auto str13 = String("string");
+    auto str14 = String("string");
+    auto str15 = String("string");
+    auto str16 = String("string");
+    auto str17 = String("string");
+    auto str18 = String("string");
+    auto str19 = String("string");
+    auto str20 = String("string");
+    auto str21 = String("string");
+    auto str22 = String("string");
+    auto str23 = String("string");
+
+    str1.insert(str1.begin() + 1, 2, 'E');
+    ASSERT_EQ(str1, "sEEtring");
+
+    auto vec = ftl::Vector{'1', '2'};
+    str2.insert(str2.begin() + 1, vec.begin(), vec.end());
+    ASSERT_EQ(str2, "s12tring");
+
+    str3.insert(str3.end(), '1');
+    ASSERT_EQ(str3, "string1");
+
+    str4.insert(str4.begin(), {'1', '2', '3'});
+    ASSERT_EQ(str4, "123string");
+
+    str5.insert(1, str5);
+    ASSERT_EQ(str5, "sstringtring");
+
+    str6.insert(3, str6, 1, 2);
+    ASSERT_EQ(str6, "strtring");
+
+    str7.insert(3, "str");
+    ASSERT_EQ(str7, "strstring");
+
+    str7.insert(1, "");
+    ASSERT_EQ(str7, "strstring");
+
+    str8.insert(3, "kaaakk", 1, 3);
+    ASSERT_EQ(str8, "straaaing");
+
+    str9.insert(2, 5, 'A');
+    ASSERT_EQ(str9, "stAAAAAring");
+
+    str10.insert(3, CS("str"));
+    ASSERT_EQ(str10, "strstring");
+
+    str11.insert(3, CS("kaaakk"), 1, 3);
+    ASSERT_EQ(str11, "straaaing");
+
+    str11.erase(1, 1);
+    ASSERT_EQ(str11, "sraaaing");
+
+    str11.erase(str11.end() - 1);
+    ASSERT_EQ(str11, "sraaain");
+
+    str11.erase(0, 1);
+    str11.erase(str11.begin() + 1, str11.begin() + 3);
+    ASSERT_EQ(str11, "rain");
+
+    str12.replace(1, 2, String("ab"));
+    ASSERT_EQ(str12, "sabing");
+
+    str13.replace(1, 2, String("aakeaa"), 2, 2);
+    ASSERT_EQ(str13, "skeing");
+
+    str14.replace(1, 2, "aakeaa", 2, 2);
+    ASSERT_EQ(str14, "skeing");
+
+    str15.replace(1, 2, CS("aakeaa"), 2, 3);
+    ASSERT_EQ(str15, "skeaing");
+
+    str16.replace(1, 2, 5, 'k');
+    ASSERT_EQ(str16, "skkkkking");
+
+    str17.replace(str17.begin(), str17.begin() + 2, String("kekkek"));
+    ASSERT_EQ(str17, "kekkekring");
+
+    str18.replace(str18.begin(), str18.begin() + 2, "kekkek");
+    ASSERT_EQ(str18, "kekkekring");
+
+    str19.replace(str19.begin(), str19.begin() + 2, CS("kekkek"));
+    ASSERT_EQ(str19, "kekkekring");
+
+    str18.replace(str18.begin(), str18.begin() + 2, "abcd", 1, 2);
+    ASSERT_EQ(str18, "bckkekring");
+
+    str19.replace(str19.begin(), str19.begin() + 2, CS("abcd"), 1, 2);
+    ASSERT_EQ(str19, "bckkekring");
+
+    str20.replace(str20.begin() + 1, str20.begin() + 3, 5, 'k');
+    ASSERT_EQ(str20, "skkkkking");
+
+    str20.replace(str20.begin() + 1, str20.end(), str21.begin() + 1, str21.end());
+    ASSERT_EQ(str21, "string");
+
+    str21.replace(str21.begin(), str21.begin() + 2, {'1', '2', '3'});
+    ASSERT_EQ(str21, "123ring");
+
+    ASSERT_EQ(3, str22.find("in"));
+    ASSERT_EQ(3, str22.find(CS("in")));
+    ASSERT_EQ(3, str22.find(String("in")));
+    ASSERT_EQ(3, str22.find('i'));
+
+    ASSERT_EQ(3, str22.rfind("in"));
+    ASSERT_EQ(3, str22.rfind(CS("in")));
+    ASSERT_EQ(3, str22.rfind(String("in")));
+    ASSERT_EQ(3, str22.rfind('i'));
+
+    ASSERT_EQ(3, str22.find_first_of("in"));
+    ASSERT_EQ(3, str22.find_first_of(CS("in")));
+    ASSERT_EQ(3, str22.find_first_of(String("in")));
+    ASSERT_EQ(3, str22.find_first_of('i'));
+
+    ASSERT_EQ(4, str22.find_last_of("ni"));
+    ASSERT_EQ(4, str22.find_last_of(CS("ni")));
+    ASSERT_EQ(4, str22.find_last_of(String("ni")));
+    ASSERT_EQ(3, str22.find_last_of('i'));
+
+    ASSERT_EQ(3, str22.find_first_not_of("strng"));
+    ASSERT_EQ(3, str22.find_first_not_of(CS("strng")));
+    ASSERT_EQ(3, str22.find_first_not_of(String("strng")));
+    ASSERT_EQ(1, str22.find_first_not_of('s'));
+
+    ASSERT_EQ(3, str22.find_last_not_of("strng"));
+    ASSERT_EQ(3, str22.find_last_not_of(CS("strng")));
+    ASSERT_EQ(3, str22.find_last_not_of(String("strng")));
+    ASSERT_EQ(4, str22.find_last_not_of('g'));
 }

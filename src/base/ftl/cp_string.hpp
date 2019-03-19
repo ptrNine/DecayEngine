@@ -125,9 +125,9 @@ namespace ftl {
             else if constexpr (std::is_same_v<CharT, Char32>) {
                 ((
                         ((hsh ^= ( _Str >> 24        )) *= 1099511628211ULL),
-                                ((hsh ^= ((_Str >> 16) & 0xFF)) *= 1099511628211ULL),
-                                ((hsh ^= ((_Str >> 8 ) & 0xFF)) *= 1099511628211ULL),
-                                ((hsh ^= ( _Str        & 0xFF)) *= 1099511628211ULL)
+                        ((hsh ^= ((_Str >> 16) & 0xFF)) *= 1099511628211ULL),
+                        ((hsh ^= ((_Str >> 8 ) & 0xFF)) *= 1099511628211ULL),
+                        ((hsh ^= ( _Str        & 0xFF)) *= 1099511628211ULL)
                 ), ...);
             }
             return hsh;
@@ -189,10 +189,10 @@ namespace ftl {
         }
 
         #define CS(STR) \
-        ftl::const_str_detail::buildHelper( \
+        (ftl::const_str_detail::buildHelper( \
             (STR)[0], \
             []{ struct Arr { static constexpr auto get() { return STR; } }; return Arr{}; }(), \
-            std::make_index_sequence<sizeof((STR)) / sizeof((STR)[0]) - 1>{})
+            std::make_index_sequence<sizeof((STR)) / sizeof((STR)[0]) - 1>{}))
 
     }
 } // namespace ftl

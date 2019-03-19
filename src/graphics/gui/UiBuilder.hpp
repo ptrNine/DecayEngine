@@ -1,7 +1,7 @@
 #ifndef UIBUILDER_UIBUILDER_HPP
 #define UIBUILDER_UIBUILDER_HPP
 
-#include "../../base/vector2.hpp"
+#include "../../base/ftl/vector2.hpp"
 #include "../../base/flags.hpp"
 #include "../../base/ftl/vector.hpp"
 #include "../../base/baseTypes.hpp"
