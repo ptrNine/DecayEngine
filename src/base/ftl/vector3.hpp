@@ -120,7 +120,7 @@ namespace ftl {
             _z =   _x * r._y - r._x * _y;
             return *this;
         }
-        ICA crossProduct(const Vector3& r) {
+        ICA crossProduct(const Vector3& r) const {
             return Vector3(
                   _y * r._z - r._y * _z,
                 -(_x * r._z - r._x * _z),
@@ -140,9 +140,11 @@ namespace ftl {
         // Vectors
         ICA  operator+(const Vector3& r) const { return add(r); }
         ICA  operator-(const Vector3& r) const { return sub(r); }
+        ICA  operator*(const Vector3& r) const { return crossProduct(r); }
 
         ICA& operator+=(const Vector3& r) { return makeAdd(r); }
         ICA& operator-=(const Vector3& r) { return makeAub(r); }
+        ICA& operator*=(const Vector3& r) { return makeCrossProduct(r);}
 
         // Scalars
         ICA  operator+(const Type& val) const { return scalarAdd(val); }

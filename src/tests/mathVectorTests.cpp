@@ -112,7 +112,8 @@ TEST(MathVectorTests, Vector2f) {
     vec3.set(6, 8);
     ASSERT_EQ(vec3.makeNormalize(), Vector2f(0.6, 0.8));
 
-    auto vec4 = vec3.normalize();
+    constexpr auto vec4 = Vector2f(4.5, 5.4).rawPerpendicular();
+    ASSERT_FLOAT_EQ(Vector2f(4.5, 5.4).divProduct(vec4), 0);
 }
 
 TEST(MathVectorTests, Vector2Conversions) {

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(DecayEngine)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 
 set(3RD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/3rd/include)
 set(3RD_LIB_DIR ${CMAKE_SOURCE_DIR}/3rd/lib)

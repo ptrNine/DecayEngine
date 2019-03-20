@@ -55,6 +55,6 @@ namespace ftl
     struct function_traits<Ret(Args...)>
             : public details::function_traits<Ret, Args...>
     {};
-};
+}
 
 #endif //DECAYENGINE_LAMBDA_HPP

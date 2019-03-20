@@ -6,8 +6,10 @@
 #include "../baseTypes.hpp"
 #include <type_traits>
 #include <utility>
+#include <cmath>
 
 #define ICA inline constexpr auto
+#define IA inline auto
 
 #ifndef VECTOR_FISR_ITERS_COUNT
 #define VECTOR_FISR_ITERS_COUNT 3
@@ -20,12 +22,15 @@ namespace ftl {
         static_assert(concepts::numbers<Type>, "Template type must be number");
 
     public:
-        Vector2() : _x(0), _y(0) {}
+        constexpr Vector2() noexcept : _x(0), _y(0) {}
 
-        Vector2(Type x, Type y) : _x(x), _y(y) {}
+        constexpr Vector2(Vector2&& vec) noexcept
+            : _x(std::move(vec._x), std::move(vec._y)) {}
 
-        explicit
-        Vector2(Type val) : _x(val), _y(val) {}
+        constexpr Vector2(Type x, Type y) : _x(x), _y(y) {}
+
+        explicit constexpr
+        Vector2(Type val) noexcept : _x(val), _y(val) {}
 
 
     public:
@@ -42,23 +47,23 @@ namespace ftl {
         const ICA& y() const noexcept { return _y; }
 
         // Same to '+', '-' ... operators
-        ICA add(const Vector2& r) const {
+        ICA add(const Vector2& r) const noexcept {
             return Vector2(_x + r._x, _y + r._y);
         }
 
-        ICA sub(const Vector2& r) const {
+        ICA sub(const Vector2& r) const noexcept {
             return Vector2(_x - r._x, _y - r._y);
         }
 
-        ICA scalarAdd(const Type& val) const {
+        ICA scalarAdd(const Type& val) const noexcept {
             return Vector2(_x + val, _y + val);
         }
 
-        ICA scalarSub(const Type& val) const {
+        ICA scalarSub(const Type& val) const noexcept {
             return Vector2(_x - val, _y - val);
         }
 
-        ICA scalarMul(const Type& val) const {
+        ICA scalarMul(const Type& val) const noexcept {
             return Vector2(_x * val, _y * val);
         }
 
@@ -67,31 +72,31 @@ namespace ftl {
         }
 
         // Same to '+=', '-=', ... operators
-        ICA& makeAdd(const Vector2& r) {
+        ICA& makeAdd(const Vector2& r) noexcept {
             _x += r._x;
             _y += r._y;
             return *this;
         }
 
-        ICA& makeSub(const Vector2& r) {
+        ICA& makeSub(const Vector2& r) noexcept {
             _x -= r._x;
             _y -= r._y;
             return *this;
         }
 
-        ICA& makeScalarAdd(const Type& val) {
+        ICA& makeScalarAdd(const Type& val) noexcept {
             _x += val;
             _y += val;
             return *this;
         }
 
-        ICA& makeScalarSub(const Type& val) {
+        ICA& makeScalarSub(const Type& val) noexcept {
             _x -= val;
             _y -= val;
             return *this;
         }
 
-        ICA& makeScalarMul(const Type& val) {
+        ICA& makeScalarMul(const Type& val) noexcept {
             _x *= val;
             _y *= val;
             return *this;
@@ -103,34 +108,34 @@ namespace ftl {
             return *this;
         }
 
-        ICA divProduct(const Vector2& r) const { return _x * r._x + _y * r._y; }
+        ICA divProduct(const Vector2& r) const noexcept { return _x * r._x + _y * r._y; }
 
-        ICA magnitude2() { return _x * _x + _y * _y; }
+        ICA magnitude2() const noexcept { return _x * _x + _y * _y; }
 
 
         // Operators
 
         // Equality
-        ICA operator==(const Vector2& r) const { return _x == r._x && _y == r._y; }
-        ICA operator!=(const Vector2& r) const { return !(*this == r); }
+        ICA operator==(const Vector2& r) const noexcept { return _x == r._x && _y == r._y; }
+        ICA operator!=(const Vector2& r) const noexcept { return !(*this == r); }
 
         // Vectors
-        ICA  operator+(const Vector2& r) const { return add(r); }
-        ICA  operator-(const Vector2& r) const { return sub(r); }
+        ICA  operator+(const Vector2& r) const noexcept { return add(r); }
+        ICA  operator-(const Vector2& r) const noexcept { return sub(r); }
 
-        ICA& operator+=(const Vector2& r) { return makeAdd(r); }
-        ICA& operator-=(const Vector2& r) { return makeSub(r); }
+        ICA& operator+=(const Vector2& r) noexcept { return makeAdd(r); }
+        ICA& operator-=(const Vector2& r) noexcept { return makeSub(r); }
 
         // Scalars
-        ICA  operator+(const Type& val) const { return scalarAdd(val); }
-        ICA  operator-(const Type& val) const { return scalarSub(val); }
-        ICA  operator*(const Type& val) const { return scalarMul(val); }
-        ICA  operator/(const Type& val) const { return scalarDiv(val); }
+        ICA  operator+(const Type& val) const noexcept { return scalarAdd(val); }
+        ICA  operator-(const Type& val) const noexcept { return scalarSub(val); }
+        ICA  operator*(const Type& val) const noexcept { return scalarMul(val); }
+        ICA  operator/(const Type& val) const          { return scalarDiv(val); }
 
-        ICA& operator+=(const Type& val) { return makeScalarAdd(val); }
-        ICA& operator-=(const Type& val) { return makeScalarSub(val); }
-        ICA& operator*=(const Type& val) { return makeScalarMul(val); }
-        ICA& operator/=(const Type& val) { return makeScalarDiv(val); }
+        ICA& operator+=(const Type& val) noexcept { return makeScalarAdd(val); }
+        ICA& operator-=(const Type& val) noexcept { return makeScalarSub(val); }
+        ICA& operator*=(const Type& val) noexcept { return makeScalarMul(val); }
+        ICA& operator/=(const Type& val)          { return makeScalarDiv(val); }
 
         template<SizeT _pos>
         friend constexpr auto get(Vector2<Type> &v) noexcept -> Type & {
@@ -172,28 +177,60 @@ namespace ftl {
     class Vector2Flt : public Vector2<Type> {
         using inherited = Vector2<Type>;
     public:
-        Vector2Flt() : inherited() {}
+        constexpr Vector2Flt() noexcept : inherited() {}
 
-        Vector2Flt(Type x, Type y) : inherited(x, y) {}
+        constexpr Vector2Flt(Vector2Flt&& vec) noexcept
+                : inherited(std::move(vec._x), std::move(vec._y)) {}
 
-        explicit
-        Vector2Flt(Type val) : inherited(val) {}
+        constexpr Vector2Flt(Type x, Type y) noexcept : inherited(x, y) {}
 
-        template<std::size_t _steps = 1>
-        ICA fastInvMagnitude() { return math::fast_inv_sqrt<_steps>(this->magnitude2()); }
+        explicit constexpr
+        Vector2Flt(Type val) noexcept : inherited(val) {}
 
-        template<std::size_t _steps = 1>
-        ICA fastMagnitude() { return 1 / fastInvMagnitude<_steps>(); }
-
-        ICA magnitude() { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
 
         template<std::size_t _steps = 1>
-        ICA& makeFastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
-        template<std::size_t _steps = 1>
-        ICA fastNormalize() { Vector2Flt((*this) * fastInvMagnitude<_steps>()); }
+        IA fastInvMagnitude() const { return math::fast_inv_sqrt<_steps>(this->magnitude2()); }
 
-        ICA& makeNormalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
-        ICA  normalize()     { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+        template<std::size_t _steps = 1>
+        IA fastMagnitude() const { return 1 / fastInvMagnitude<_steps>(); }
+        IA magnitude    () const { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
+
+        template<std::size_t _steps = 1>
+        IA& makeFastNormalize()  { return ((*this) *= fastInvMagnitude<_steps>()); }
+        IA& makeNormalize()      { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+
+        template<std::size_t _steps = 1>
+        IA fastNormalize() const { Vector2Flt((*this) * fastInvMagnitude<_steps>()); }
+        IA normalize    () const { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+
+
+        IA& makeRawPerpendicular() {
+            using inh = inherited;
+            inh::_x = 1;
+            inh::_y = -inh::_x / inh::_y;
+
+            return std::isinf(inh::_y) ?
+                inh::set(0, 1) :
+                *this;
+        };
+
+        IA& makePerpendicular() {
+            return makeRawPerpendicular().makeNormalize();
+        }
+
+        ICA rawPerpendicular() const {
+            using inh = inherited;
+            Type x = 1;
+            Type y = -inh::_x / inh::_y;
+
+            return std::isinf(y) ?
+                Vector2Flt(0, 1) :
+                Vector2Flt(x, y);
+        }
+
+        IA perpendicular() const {
+            return rawPerpendicular().makeNormalize();
+        }
     };
 
 } // namespace ftl
@@ -247,5 +284,6 @@ namespace ftl {
 } // namespace ftl
 
 #undef ICA // inline constexpr auto
+#undef ICA // inline auto
 
 #endif //UIBUILDER_VECTOR2_HPP
