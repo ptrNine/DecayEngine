@@ -1,22 +1,18 @@
 
-
 #include "src/base/ftl/string.hpp"
+//#include "src/base/configs.hpp"
+//#include <flat_hash_map.hpp>
+#include "3rd/include/flat_hash_map.hpp"
+#include "src/base/time.hpp"
 
+#include <fmt/formatTest.h>
 #include <iostream>
-#include "src/luabind/LuaContext.hpp"
-#include "src/luabind/Function.hpp"
-#include "src/graphics/gui/UiBuilder.hpp"
-
-#include <boost/hana.hpp>
-#include <variant>
-#include "src/base/ftl/vector2.hpp"
 
 int main() {
-
-    auto a = math::fast_inv_sqrt<1>(25.0);
-
-    std::cout << 1/a << std::endl;
-
+    ftl::String kek{"sfsdfsdfsdf"};
+    ftl::String str;
+    str.sprintf("Hello {}", base::timer().getSystemDateTime());
+    std::cout << str << std::endl;
 
     //UIBuilder builder("/mnt/sda6-drive/Repos/DecayEngine/testGamedata/ui/gui.xml");
     //builder.present(nullptr);

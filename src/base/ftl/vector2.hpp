@@ -1,12 +1,13 @@
 #ifndef UIBUILDER_VECTOR2_HPP
 #define UIBUILDER_VECTOR2_HPP
 
-#include "../math.hpp"
-#include "../concepts.hpp"
-#include "../baseTypes.hpp"
 #include <type_traits>
 #include <utility>
-#include <cmath>
+
+#include "../math.hpp"
+#include "containers_base.hpp"
+#include "../concepts.hpp"
+#include "string.hpp"
 
 #define ICA inline constexpr auto
 #define IA inline auto
@@ -24,10 +25,13 @@ namespace ftl {
     public:
         constexpr Vector2() noexcept : _x(0), _y(0) {}
 
+        constexpr Vector2(const Vector2& vec) noexcept
+            : Vector2(vec._x, vec._y) {}
+
         constexpr Vector2(Vector2&& vec) noexcept
             : _x(std::move(vec._x), std::move(vec._y)) {}
 
-        constexpr Vector2(Type x, Type y) : _x(x), _y(y) {}
+        constexpr Vector2(Type x, Type y) noexcept : _x(x), _y(y) {}
 
         explicit constexpr
         Vector2(Type val) noexcept : _x(val), _y(val) {}
@@ -108,10 +112,21 @@ namespace ftl {
             return *this;
         }
 
-        ICA divProduct(const Vector2& r) const noexcept { return _x * r._x + _y * r._y; }
+        ICA dotProduct(const Vector2 &r) const noexcept { return _x * r._x + _y * r._y; }
 
         ICA magnitude2() const noexcept { return _x * _x + _y * _y; }
 
+
+        // Format and print
+        auto to_string() const -> ftl::String {
+            return ftl::String().sprintf("{} {}, {} {}", "{", _x, _y, "}");
+        }
+
+        void print(std::ostream& os = std::cout) const {
+            os << to_string();
+        }
+
+        friend std::ostream& operator<< (std::ostream& os, const Vector2& vec) { vec.print(os); return os; }
 
         // Operators
 
@@ -179,8 +194,11 @@ namespace ftl {
     public:
         constexpr Vector2Flt() noexcept : inherited() {}
 
+        constexpr Vector2Flt(const Vector2Flt& vec) noexcept
+            : inherited(vec._x, vec._y) {}
+
         constexpr Vector2Flt(Vector2Flt&& vec) noexcept
-                : inherited(std::move(vec._x), std::move(vec._y)) {}
+            : inherited(std::move(vec._x), std::move(vec._y)) {}
 
         constexpr Vector2Flt(Type x, Type y) noexcept : inherited(x, y) {}
 
@@ -203,7 +221,7 @@ namespace ftl {
         IA fastNormalize() const { Vector2Flt((*this) * fastInvMagnitude<_steps>()); }
         IA normalize    () const { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
 
-
+        /*
         IA& makeRawPerpendicular() {
             using inh = inherited;
             inh::_x = 1;
@@ -231,6 +249,7 @@ namespace ftl {
         IA perpendicular() const {
             return rawPerpendicular().makeNormalize();
         }
+         */
     };
 
 } // namespace ftl
@@ -282,6 +301,29 @@ namespace ftl {
     }
 
 } // namespace ftl
+
+// fmt format
+template <typename Type>
+struct fmt::formatter<ftl::Vector2<Type>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::Vector2<Type>& vec, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", vec.to_string());
+    }
+};
+
+template <typename Type>
+struct fmt::formatter<ftl::Vector2Flt<Type>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::Vector2Flt<Type>& vec, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", vec.to_string());
+    }
+};
 
 #undef ICA // inline constexpr auto
 #undef ICA // inline auto

@@ -1,13 +1,15 @@
 #ifndef DECAYENGINE_VECTOR3_HPP
 #define DECAYENGINE_VECTOR3_HPP
 
-#include "../math.hpp"
-#include "../concepts.hpp"
-#include "../baseTypes.hpp"
 #include <type_traits>
 #include <utility>
 
+#include "../math.hpp"
+#include "containers_base.hpp"
+#include "../concepts.hpp"
+
 #define ICA inline constexpr auto
+#define IA inline auto
 
 #ifndef VECTOR_FISR_ITERS_COUNT
 #define VECTOR_FISR_ITERS_COUNT 3
@@ -20,12 +22,19 @@ namespace ftl {
         static_assert(concepts::numbers<Type>, "Template type must be number");
 
     public:
-        Vector3() : _x(0), _y(0), _z(0) {}
+        constexpr Vector3() noexcept : _x(0), _y(0), _z(0) {}
 
-        Vector3(Type x, Type y, Type z) : _x(x), _y(y), _z(y) {}
+        constexpr Vector3(const Vector3& vec) noexcept
+            : Vector3(vec._x, vec._y, vec._z) {}
 
-        explicit
-        Vector3(Type val) : _x(val), _y(val), _z(val) {}
+        constexpr Vector3(Vector3&& vec) noexcept
+            : _x(std::move(vec._x), std::move(vec._y), std::move(vec._z)) {}
+
+        constexpr Vector3(Type x, Type y, Type z) noexcept
+            : _x(x), _y(y), _z(z) {}
+
+        constexpr explicit
+        Vector3(Type val) noexcept : _x(val), _y(val), _z(val) {}
 
 
     public:
@@ -45,23 +54,23 @@ namespace ftl {
         const ICA& z() const noexcept { return _z; }
 
         // Same to '+', '-' ... operators
-        ICA add(const Vector3& r) const {
+        ICA add(const Vector3& r) const noexcept {
             return Vector3(_x + r._x, _y + r._y, _z + r._z);
         }
 
-        ICA sub(const Vector3& r) const {
+        ICA sub(const Vector3& r) const noexcept {
             return Vector3(_x - r._x, _y - r._y, _z - r._z);
         }
 
-        ICA scalarAdd(const Type& val) const {
+        ICA scalarAdd(const Type& val) const noexcept {
             return Vector3(_x + val, _y + val, _z + val);
         }
 
-        ICA scalarSub(const Type& val) const {
+        ICA scalarSub(const Type& val) const noexcept {
             return Vector3(_x - val, _y - val, _z - val);
         }
 
-        ICA scalarMul(const Type& val) const {
+        ICA scalarMul(const Type& val) const noexcept {
             return Vector3(_x * val, _y * val, _z * val);
         }
 
@@ -70,35 +79,35 @@ namespace ftl {
         }
 
         // Same to '+=', '-=', ... operators
-        ICA& makeAdd(const Vector3& r) {
+        ICA& makeAdd(const Vector3& r) noexcept {
             _x += r._x;
             _y += r._y;
             _z += r._z;
             return *this;
         }
 
-        ICA& makeSub(const Vector3& r) {
+        ICA& makeSub(const Vector3& r) noexcept {
             _x -= r._x;
             _y -= r._y;
             _z -= r._z;
             return *this;
         }
 
-        ICA& makeScalarAdd(const Type& val) {
+        ICA& makeScalarAdd(const Type& val) noexcept {
             _x += val;
             _y += val;
             _z += val;
             return *this;
         }
 
-        ICA& makeScalarSub(const Type& val) {
+        ICA& makeScalarSub(const Type& val) noexcept {
             _x -= val;
             _y -= val;
             _z -= val;
             return *this;
         }
 
-        ICA& makeScalarMul(const Type& val) {
+        ICA& makeScalarMul(const Type& val) noexcept {
             _x *= val;
             _y *= val;
             _z *= val;
@@ -112,9 +121,9 @@ namespace ftl {
             return *this;
         }
 
-        ICA divProduct(const Vector3& r) const { return _x * r._x + _y * r._y + _z * r._z; }
+        ICA dotProduct(const Vector3 &r) const noexcept { return _x * r._x + _y * r._y + _z * r._z; }
 
-        ICA& makeCrossProduct(const Vector3& r) {
+        ICA& makeCrossProduct(const Vector3& r) noexcept {
             _x =   _y * r._z - r._y * _z;
             _y = -(_x * r._z - r._x * _z);
             _z =   _x * r._y - r._x * _y;
@@ -128,33 +137,43 @@ namespace ftl {
             );
         }
 
-        ICA magnitude2() { return _x * _x + _y * _y + _z * _z; }
+        ICA magnitude2() const noexcept { return _x * _x + _y * _y + _z * _z; }
 
+        // Format and print
+        auto to_string() const -> ftl::String {
+            return ftl::String().sprintf("{} {}, {}, {} {}", "{", _x, _y, _z, "}");
+        }
+
+        void print(std::ostream& os = std::cout) const {
+            os << to_string();
+        }
+
+        friend std::ostream& operator<< (std::ostream& os, const Vector3& vec) { vec.print(os); return os; }
 
         // Operators
 
         // Equality
-        ICA operator==(const Vector3& r) const { return _x == r._x && _y == r._y && _z == r._z; }
-        ICA operator!=(const Vector3& r) const { return !(*this == r); }
+        ICA operator==(const Vector3& r) const noexcept { return _x == r._x && _y == r._y && _z == r._z; }
+        ICA operator!=(const Vector3& r) const noexcept { return !(*this == r); }
 
         // Vectors
-        ICA  operator+(const Vector3& r) const { return add(r); }
-        ICA  operator-(const Vector3& r) const { return sub(r); }
-        ICA  operator*(const Vector3& r) const { return crossProduct(r); }
+        ICA  operator+(const Vector3& r) const noexcept { return add(r); }
+        ICA  operator-(const Vector3& r) const noexcept { return sub(r); }
+        ICA  operator*(const Vector3& r) const noexcept { return crossProduct(r); }
 
-        ICA& operator+=(const Vector3& r) { return makeAdd(r); }
-        ICA& operator-=(const Vector3& r) { return makeAub(r); }
-        ICA& operator*=(const Vector3& r) { return makeCrossProduct(r);}
+        ICA& operator+=(const Vector3& r) noexcept { return makeAdd(r); }
+        ICA& operator-=(const Vector3& r) noexcept { return makeAub(r); }
+        ICA& operator*=(const Vector3& r) noexcept { return makeCrossProduct(r);}
 
         // Scalars
-        ICA  operator+(const Type& val) const { return scalarAdd(val); }
-        ICA  operator-(const Type& val) const { return scalarSub(val); }
-        ICA  operator*(const Type& val) const { return scalarMul(val); }
+        ICA  operator+(const Type& val) const noexcept { return scalarAdd(val); }
+        ICA  operator-(const Type& val) const noexcept { return scalarSub(val); }
+        ICA  operator*(const Type& val) const noexcept { return scalarMul(val); }
         ICA  operator/(const Type& val) const { return scalarDiv(val); }
 
-        ICA& operator+=(const Type& val) { return makeScalarAdd(val); }
-        ICA& operator-=(const Type& val) { return makeScalarSub(val); }
-        ICA& operator*=(const Type& val) { return makeScalarMul(val); }
+        ICA& operator+=(const Type& val) noexcept { return makeScalarAdd(val); }
+        ICA& operator-=(const Type& val) noexcept { return makeScalarSub(val); }
+        ICA& operator*=(const Type& val) noexcept { return makeScalarMul(val); }
         ICA& operator/=(const Type& val) { return makeScalarDiv(val); }
 
         template<SizeT _pos>
@@ -200,30 +219,35 @@ namespace ftl {
     class Vector3Flt : public Vector3<Type> {
         using inherited = Vector3<Type>;
     public:
-        Vector3Flt() : inherited() {}
+        constexpr Vector3Flt() noexcept : inherited() {}
 
-        Vector3Flt(Type x, Type y, Type z) : inherited(x, y, z) {}
+        constexpr Vector3Flt(const Vector3Flt& vec) noexcept
+            : inherited(vec._x, vec._y, vec._z) {}
 
-        explicit
-        Vector3Flt(Type val) : inherited(val) {}
+        constexpr Vector3Flt(Vector3Flt&& vec) noexcept
+            : inherited(std::move(vec._x), std::move(vec._y), std::move(vec._z)) {}
 
+        constexpr Vector3Flt(Type x, Type y, Type z) noexcept
+            : inherited(x, y, z) {}
 
-        template<std::size_t _steps = 1>
-        ICA fastInvMagnitude() { return math::fast_inv_sqrt<_steps>(this->magnitude2()); }
+        constexpr explicit
+        Vector3Flt(Type val) noexcept : inherited(val) {}
 
-        template<std::size_t _steps = 1>
-        ICA fastMagnitude() { return 1 / fastInvMagnitude<_steps>(); }
-
-        ICA magnitude() { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
-
-        template<std::size_t _steps = 1>
-        ICA& makeFastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
 
         template<std::size_t _steps = 1>
-        ICA fastNormalize() { return Vector3Flt((*this) * fastInvMagnitude<_steps>()); }
+        IA fastInvMagnitude() const { return math::fast_inv_sqrt<_steps>(this->magnitude2()); }
 
-        ICA& makeNormalize() { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
-        ICA  normalize()     { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+        template<std::size_t _steps = 1>
+        IA fastMagnitude() const { return 1 / fastInvMagnitude<_steps>(); }
+        IA magnitude    () const { return 1 / fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>(); }
+
+        template<std::size_t _steps = 1>
+        IA& makeFastNormalize() { return ((*this) *= fastInvMagnitude<_steps>()); }
+        IA& makeNormalize    () { return ((*this) *= fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+
+        template<std::size_t _steps = 1>
+        IA fastNormalize() const { return Vector3Flt((*this) * fastInvMagnitude<_steps>()); }
+        IA normalize    () const { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
     };
 
 } // namespace ftl
@@ -275,6 +299,29 @@ namespace ftl {
     }
 
 } // namespace ftl
+
+// fmt format
+template <typename Type>
+struct fmt::formatter<ftl::Vector3<Type>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::Vector3<Type>& vec, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", vec.to_string());
+    }
+};
+
+template <typename Type>
+struct fmt::formatter<ftl::Vector3Flt<Type>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::Vector3Flt<Type>& vec, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", vec.to_string());
+    }
+};
 
 #undef ICA // inline constexpr auto
 

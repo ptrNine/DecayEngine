@@ -6,46 +6,47 @@
 #include <sstream>
 #include <functional>
 #include "containers_base.hpp"
+#include "string.hpp"
 
 namespace ftl {
-    template <typename Type, std::size_t _size>
+    template <typename Type, SizeT _Size>
     class Array {
     public:
-        using Iterator       = typename std::array<Type, _size>::iterator;
-        using ConstIterator  = typename std::array<Type, _size>::const_iterator;
-        using RIterator      = typename std::array<Type, _size>::reverse_iterator;
-        using ConstRIterator = typename std::array<Type, _size>::const_reverse_iterator;
+        using Iterator       = typename std::array<Type, _Size>::iterator;
+        using ConstIterator  = typename std::array<Type, _Size>::const_iterator;
+        using RIterator      = typename std::array<Type, _Size>::reverse_iterator;
+        using ConstRIterator = typename std::array<Type, _Size>::const_reverse_iterator;
 
     protected:
-        template <typename Function, std::size_t pos, std::size_t count>
+        template <typename Function, SizeT pos, SizeT count>
         inline static constexpr auto
         _count_elements(Function callback, const Array& array) noexcept ->
-        typename std::enable_if<_size == pos, std::size_t>::type {
+        typename std::enable_if<_Size == pos, SizeT>::type {
             return count;
         }
 
-        template <typename Function, std::size_t pos = 0, std::size_t count = 0>
+        template <typename Function, SizeT pos = 0, SizeT count = 0>
         inline static constexpr auto
         _count_elements(Function callback, const Array& array) noexcept ->
-        typename std::enable_if<_size != pos, std::size_t>::type {
+        typename std::enable_if<_Size != pos, SizeT>::type {
             return callback(std::get<pos>(array._stl_array)) ?
                    _count_elements<Function, pos + 1, count + 1>(callback, array) :
                    _count_elements<Function, pos + 1, count>(callback, array);
         }
 
-        template <typename Function, std::size_t pos>
+        template <typename Function, SizeT pos>
         inline static constexpr void
         _foreach_iter(Function callback, Array& array) noexcept {
             callback(std::get<pos>(array._stl_array));
-            if constexpr (pos + 1 < _size)
+            if constexpr (pos + 1 < _Size)
                 _foreach_iter<Function, pos + 1>(callback, array);
         }
 
     public:
 
         // No arguments, noexcept
-        constexpr auto size    () const noexcept -> std::size_t { return _stl_array.size(); }
-        constexpr auto max_size() const noexcept -> std::size_t { return _stl_array.max_size(); }
+        constexpr auto size    () const noexcept -> SizeT       { return _stl_array.size(); }
+        constexpr auto max_size() const noexcept -> SizeT       { return _stl_array.max_size(); }
         constexpr auto empty   () const noexcept -> bool        { return _stl_array.empty(); }
         constexpr auto back    () noexcept       -> Type&       { return _stl_array.back(); }
         constexpr auto back    () const noexcept -> const Type& { return _stl_array.back(); }
@@ -68,15 +69,15 @@ namespace ftl {
         constexpr auto crbegin () const noexcept -> ConstRIterator { return _stl_array.crbegin(); }
         constexpr auto crend   () const noexcept -> ConstRIterator { return _stl_array.crend(); }
 
-        constexpr auto at (std::size_t position)       -> Type&       { return _stl_array.at(position); }
-        constexpr auto at (std::size_t position) const -> const Type& { return _stl_array.at(position); }
+        constexpr auto at (SizeT position)       -> Type&       { return _stl_array.at(position); }
+        constexpr auto at (SizeT position) const -> const Type& { return _stl_array.at(position); }
 
         auto fill (const Type& value) -> Array& { _stl_array.fill(std::cref(value)); return *this; }
         auto swap (Array& array)      -> Array& { _stl_array.swap(array._stl_array); return *this; }
 
         // Operators
-        constexpr auto operator[] (std::size_t position) noexcept       -> Type&       { return _stl_array[position]; }
-        constexpr auto operator[] (std::size_t position) const noexcept -> const Type& { return _stl_array[position]; }
+        constexpr auto operator[] (SizeT position) noexcept       -> Type&       { return _stl_array[position]; }
+        constexpr auto operator[] (SizeT position) const noexcept -> const Type& { return _stl_array[position]; }
 
         friend std::ostream& operator<< (std::ostream& os, const Array& array) { array.print(std::ref(os)); return std::ref(os); }
 
@@ -86,13 +87,13 @@ namespace ftl {
 
         // Compile-time methods
         template <typename Function>
-        inline constexpr auto count_elements_if(Function callback) const -> std::size_t {
+        inline constexpr auto count_elements_if(Function callback) const -> SizeT {
             return _count_elements(callback, *this);
         }
 
         template <typename Function>
         constexpr auto cmap(Function callback) const {
-            auto array = Array<typename ftl::function_traits<Function>::return_type, _size>();
+            auto array = Array<typename ftl::function_traits<Function>::return_type, _Size>();
             return _map_iter<Function>(callback, array);
         }
 
@@ -134,19 +135,19 @@ namespace ftl {
          * @return Vector with mapped values
          */
         template <typename Function>
-        auto map(Function callback) const -> Array<ttr::return_type_of<Function>, _size> {
+        auto map(Function callback) const -> Array<ttr::return_type_of<Function>, _Size> {
             static_assert(
                     ttr::args_count<Function> == 1 ||
                     ttr::args_count<Function> == 2,
                     "Callback has wrong number of arguments"
             );
-            auto mapped = Array<ttr::return_type_of<Function>, _size>();
+            auto mapped = Array<ttr::return_type_of<Function>, _Size>();
 
             if constexpr (ttr::args_count<Function> == 1) {
-                for (std::size_t i = 0; i < _size; ++i)
+                for (SizeT i = 0; i < _Size; ++i)
                     mapped.at(i) = callback(at(i));
             } else if constexpr (ttr::args_count<Function> == 2) {
-                for (std::size_t i = 0; i < _size; ++i)
+                for (SizeT i = 0; i < _Size; ++i)
                     mapped.at(i) = callback(at(i), i);
             }
             return std::move(mapped);
@@ -170,7 +171,7 @@ namespace ftl {
                 for (auto &item : _stl_array)
                     callback(item);
             } else if constexpr (ttr::args_count<Function> == 2) {
-                std::size_t i = 0;
+                SizeT i = 0;
                 for (auto &item : _stl_array)
                     callback(item, i++);
             }
@@ -190,14 +191,14 @@ namespace ftl {
             std::sort(_stl_array.begin(), _stl_array.end(), callback);
             return *this;
         }
-        auto to_string() const -> std::string {
+        auto to_string() const -> ftl::String {
             auto sstream = std::stringstream();
             print(sstream);
             return sstream.str();
         }
 
         void print(std::ostream& os = std::cout) const {
-            switch (_size) {
+            switch (_Size) {
                 case 0: os << "{}"; return;
                 case 1: os << "{ " << front() << " }"; return;
                 default:
@@ -208,52 +209,54 @@ namespace ftl {
             }
         }
 
+        U64 hash() const { return XXH64(_stl_array.data(), _stl_array.size() * sizeof(Type), 0); }
+
     protected:
         // constexpr cmap realization
-        template <typename Function, typename NewType, std::size_t pos>
-        constexpr auto _map_iter(Function callback, Array<NewType, _size>& newArray) const
-        -> typename std::enable_if_t<pos == _size, Array<NewType, _size>>
+        template <typename Function, typename NewType, SizeT pos>
+        constexpr auto _map_iter(Function callback, Array<NewType, _Size>& newArray) const
+        -> typename std::enable_if_t<pos == _Size, Array<NewType, _Size>>
         {
             return newArray;
         }
 
-        template <typename Function, typename NewType, std::size_t pos = 0>
-        constexpr auto _map_iter(Function callback, Array<NewType, _size>& newArray) const
+        template <typename Function, typename NewType, SizeT pos = 0>
+        constexpr auto _map_iter(Function callback, Array<NewType, _Size>& newArray) const
         -> typename std::enable_if_t<
-                pos != _size &&
+                pos != _Size &&
                 ftl::function_traits<Function>::arity == 1,
-                Array<NewType, _size>>
+                Array<NewType, _Size>>
         {
             std::get<pos>(newArray._stl_array) = callback(std::get<pos>(_stl_array));
             return _map_iter<Function, NewType, pos + 1>(callback, newArray);
         }
 
-        template <typename Function, typename NewType, std::size_t pos = 0>
-        constexpr auto _map_iter(Function callback, Array<NewType, _size>& newArray) const
+        template <typename Function, typename NewType, SizeT pos = 0>
+        constexpr auto _map_iter(Function callback, Array<NewType, _Size>& newArray) const
         -> typename std::enable_if_t<
-                pos != _size &&
+                pos != _Size &&
                 ftl::function_traits<Function>::arity == 2,
-                Array<NewType, _size>>
+                Array<NewType, _Size>>
         {
             std::get<pos>(newArray._stl_array) = callback(std::get<pos>(_stl_array), pos);
             return _map_iter<Function, NewType, pos + 1>(callback, newArray);
         }
 
-        template <typename Function, typename NewType, std::size_t pos>
+        template <typename Function, typename NewType, SizeT pos>
         constexpr auto _reduce_iter(Function callback, NewType result) const
-        -> typename std::enable_if_t<pos == _size, NewType> {
+        -> typename std::enable_if_t<pos == _Size, NewType> {
             return result;
         }
 
-        template <typename Function, typename NewType, std::size_t pos>
+        template <typename Function, typename NewType, SizeT pos>
         constexpr auto _reduce_iter(Function callback, NewType result) const
-        -> typename std::enable_if_t<pos != 0 && pos != _size, NewType> {
+        -> typename std::enable_if_t<pos != 0 && pos != _Size, NewType> {
             return _reduce_iter<Function, NewType, pos + 1> (
                     callback,
                     callback(result, std::get<pos + 1>(_stl_array)));
         }
 
-        template <typename Function, typename NewType, std::size_t pos = 0>
+        template <typename Function, typename NewType, SizeT pos = 0>
         constexpr auto _reduce_iter(Function callback) const
         -> typename std::enable_if_t<pos == 0, NewType> {
             return _reduce_iter<Function, NewType, pos + 1> (
@@ -264,69 +267,69 @@ namespace ftl {
 
 
     public:
-        std::array<Type, _size> _stl_array;
+        std::array<Type, _Size> _stl_array;
     };
 
     template<typename Type, typename... ValType>
     Array(Type, ValType...)
     -> Array<std::enable_if_t<(std::is_same_v<Type, ValType> && ...), Type>, 1 + sizeof...(ValType)>;
 
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator==(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return std::equal(one.begin(), one.end(), two.begin());
     }
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator!=(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return !(one == two);
     }
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator<(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return std::lexicographical_compare(one.begin(), one.end(), two.begin(), two.end());
     }
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator>(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return two < one;
     }
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator>=(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return !(one < two);
     }
-    template<typename Type, std::size_t _size>
+    template<typename Type, SizeT _size>
     inline auto operator<=(const Array<Type, _size>& one, const Array<Type, _size>& two) -> bool {
         return !(one > two);
     }
 
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(ftl::Array<Type, _size>& array) noexcept -> Type& {
         return std::get<_pos>(array._stl_array);
     }
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(const ftl::Array<Type, _size>& array) noexcept -> const Type& {
         return std::get<_pos>(array._stl_array);
     }
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(ftl::Array<Type, _size>&& array) noexcept -> Type&& {
         return std::move(std::get<_pos>(array._stl_array));
     }
 }
 
 namespace std {
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(ftl::Array<Type, _size>& array) noexcept -> Type& {
         return std::get<_pos>(array._stl_array);
     }
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(const ftl::Array<Type, _size>& array) noexcept -> const Type& {
         return std::get<_pos>(array._stl_array);
     }
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     constexpr auto get(ftl::Array<Type, _size>&& array) noexcept -> Type&& {
         return std::move(std::get<_pos>(array._stl_array));
     }
 }
 
 namespace details {
-    template<typename Type, std::size_t _size, typename Function, typename... Types>
+    template<typename Type, SizeT _size, typename Function, typename... Types>
     constexpr auto map(Function callback, Types... args) -> ftl::Array<Type, _size> {
         std::tuple<Types...> result((callback(args))...);
         return result;
@@ -334,10 +337,30 @@ namespace details {
 }
 
 namespace std {
-    template<typename Type, std::size_t _size>
-    struct tuple_size<ftl::Array<Type, _size>> : public integral_constant<std::size_t, _size> {};
+    template<typename Type, SizeT _size>
+    struct tuple_size<ftl::Array<Type, _size>> : public integral_constant<SizeT, _size> {};
 
-    template<std::size_t _pos, typename Type, std::size_t _size>
+    template<SizeT _pos, typename Type, SizeT _size>
     struct tuple_element<_pos, ftl::Array<Type, _size>> : tuple_element<_pos, std::array<Type, _size>> {};
 }
+
+// fmt format
+template <typename Type, SizeT _Size>
+struct fmt::formatter<ftl::Array<Type, _Size>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::Array<Type, _Size>& array, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", array.to_string());
+    }
+};
+
+// std chash
+template <typename Type, SizeT _Size>
+struct std::hash<ftl::Array<Type, _Size>> {
+    U64 operator()(const ftl::Array<Type, _Size>& vec) const {
+        return vec.hash();
+    }
+};
 #endif //UNTITLED6_ARRAY_HPP

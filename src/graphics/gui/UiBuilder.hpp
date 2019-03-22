@@ -60,8 +60,8 @@ public:
     UIBase* initFromXmlNode(rapidxml::xml_node<>* node) override;
 
 protected:
-    Vector2<uint32_t> _pos;
-    Vector2<uint32_t> _size;
+    ftl::Vector2<uint32_t> _pos;
+    ftl::Vector2<uint32_t> _size;
     std::string _title;
     std::string _id;
 };

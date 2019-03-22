@@ -49,7 +49,7 @@ TEST(MathVectorTests, Vector2u) {
 
     ASSERT_EQ(vec3.magnitude2(), 29);
 
-    ASSERT_EQ(vec3.divProduct(Vector2u(2, 2)), 14);
+    ASSERT_EQ(vec3.dotProduct(Vector2u(2, 2)), 14);
 
     ASSERT_EQ(vec, Vector2u(2, 4));
     ASSERT_EQ(vec2, Vector2u(3, 6));
@@ -105,15 +105,15 @@ TEST(MathVectorTests, Vector2f) {
     vec3.set(0.4, 0.3);
     ASSERT_EQ(vec3.magnitude2(), 0.25);
 
-    ASSERT_FLOAT_EQ(vec3.divProduct(Vector2f(-2, 2)), -0.2);
+    ASSERT_FLOAT_EQ(vec3.dotProduct(Vector2f(-2, 2)), -0.2);
 
     ASSERT_FLOAT_EQ(vec3.magnitude(), 0.5);
 
     vec3.set(6, 8);
     ASSERT_EQ(vec3.makeNormalize(), Vector2f(0.6, 0.8));
 
-    constexpr auto vec4 = Vector2f(4.5, 5.4).rawPerpendicular();
-    ASSERT_FLOAT_EQ(Vector2f(4.5, 5.4).divProduct(vec4), 0);
+    //constexpr auto vec4 = Vector2f(4.5, 5.4).rawPerpendicular();
+    //ASSERT_FLOAT_EQ(Vector2f(4.5, 5.4).dotProduct(vec4), 0);
 }
 
 TEST(MathVectorTests, Vector2Conversions) {

@@ -1,6 +1,7 @@
 #ifndef DECAYENGINE_STRING_HPP
 #define DECAYENGINE_STRING_HPP
 
+#include "containers_base.hpp"
 #include "cp_string.hpp"
 #include "../baseTypes.hpp"
 #include "../concepts.hpp"
@@ -13,6 +14,8 @@ namespace ftl {
                 "String must contains char symbols only"
         );
 
+    public:
+        using CharType = CharT;
         using SizeType = typename std::basic_string<CharT>::size_type;
         using IterT    = typename std::basic_string<CharT>::iterator;
         using C_IterT  = typename std::basic_string<CharT>::const_iterator;
@@ -30,10 +33,10 @@ namespace ftl {
         StringBase(const StringBase& str, SizeType pos)             : _str_v(str._str_v, pos) {}
         StringBase(const StringBase& str, SizeType pos, SizeType n) : _str_v(str._str_v, pos, n) {}
 
-        explicit StringBase(const std::basic_string<CharT>& str)      : _str_v(str) {}
-        explicit StringBase(const std::basic_string_view<CharT>& str) : _str_v(str) {}
-        explicit StringBase(std::basic_string<CharT>&& str)           : _str_v(std::move(str)) {}
-        explicit StringBase(std::basic_string_view<CharT>&& str)      : _str_v(std::move(str)) {}
+        StringBase(const std::basic_string<CharT>& str)      : _str_v(str) {}
+        StringBase(const std::basic_string_view<CharT>& str) : _str_v(str) {}
+        StringBase(std::basic_string<CharT>&& str)           : _str_v(std::move(str)) {}
+        StringBase(std::basic_string_view<CharT>&& str)      : _str_v(std::move(str)) {}
 
         StringBase(SizeType n, CharT c)            : _str_v(c, n) {}
         StringBase(std::initializer_list<CharT> l) : _str_v(l) {}
@@ -43,16 +46,16 @@ namespace ftl {
         StringBase(InputIterator beg, InputIterator end) : _str_v(beg, end) {}
 
         template <std::size_t _Size>
-        explicit StringBase(const CharT(&str)[_Size]) : _str_v(str, _Size ? _Size-1 : 0) {}
+        StringBase(const CharT(&str)[_Size]) : _str_v(str, _Size ? _Size-1 : 0) {}
 
         template <CharT... _Str>
-        explicit StringBase(ConstexprString<CharT, _Str...> str) : StringBase(str.str_view()) {}
+        StringBase(ConstexprString<CharT, _Str...> str) : StringBase(str.str_view()) {}
 
 
         // Basic methods
 
         inline auto max_size() const { return _str_v.max_size(); }
-        inline auto lenght  () const { return _str_v.length(); }
+        inline auto length() const { return _str_v.length(); }
         inline auto capacity() const { return _str_v.capacity(); }
         inline auto empty   () const { return _str_v.empty(); }
         inline auto size    () const { return _str_v.size(); }
@@ -302,6 +305,7 @@ namespace ftl {
         }
 
         // Operators
+
         inline auto operator==(const StringBase& str) const { return _str_v == str._str_v; }
         inline auto operator!=(const StringBase& str) const { return _str_v != str._str_v; }
 
@@ -436,6 +440,18 @@ namespace ftl {
             return os;
         }
 
+        friend void swap (StringBase& a, StringBase& b) {
+            std::swap(a._str_v, b._str_v);
+        }
+
+        template <typename FmtT, typename... ArgsT>
+        auto& sprintf(FmtT format, ArgsT... args) {
+            _str_v = fmt::format(format, args...);
+            return *this;
+        }
+
+        U64 hash() const { return XXH64(_str_v.c_str(), _str_v.length() * sizeof(CharT), 0); }
+
     protected:
         std::basic_string<CharT> _str_v;
     };
@@ -445,5 +461,25 @@ namespace ftl {
     using String32 = StringBase<Char32>;
 
 } // namespace ftl
+
+// fmt format
+template <>
+struct fmt::formatter<ftl::String> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::String& str, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", str.c_str());
+    }
+};
+
+// std chash
+template <typename CharT>
+struct std::hash<ftl::StringBase<CharT>> {
+    U64 operator()(const ftl::StringBase<CharT>& str) const {
+        return str.hash();
+    }
+};
 
 #endif //DECAYENGINE_STRING_HPP

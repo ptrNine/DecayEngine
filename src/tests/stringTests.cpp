@@ -8,7 +8,7 @@ TEST(StringTests, CompileTimeString) {
     constexpr auto size     = str.size();
     constexpr auto c_str    = str.c_str();
     constexpr auto str_view = str.str_view();
-    constexpr auto hash     = str.hash();
+    constexpr auto hash     = str.chash();
     constexpr auto cut_l    = str.cut_l<2>();
     constexpr auto cut_r    = str.cut_r<3>();
     constexpr auto first    = str[0];
@@ -41,7 +41,7 @@ TEST(StringTests, CompileTimeString16) {
     constexpr auto size     = str.size();
     constexpr auto c_str    = str.c_str();
     constexpr auto str_view = str.str_view();
-    constexpr auto hash     = str.hash();
+    constexpr auto hash     = str.chash();
     constexpr auto cut_l    = str.cut_l<2>();
     constexpr auto cut_r    = str.cut_r<3>();
     constexpr auto first    = str[0];
@@ -73,7 +73,7 @@ TEST(StringTests, CompileTimeString32) {
     constexpr auto size     = str.size();
     constexpr auto c_str    = str.c_str();
     constexpr auto str_view = str.str_view();
-    constexpr auto hash     = str.hash();
+    constexpr auto hash     = str.chash();
     constexpr auto cut_l    = str.cut_l<2>();
     constexpr auto cut_r    = str.cut_r<3>();
     constexpr auto first    = str[0];
@@ -111,9 +111,9 @@ TEST(StringTests, StringBase) {
     auto cstr2 = str2.c_str();
     auto cstr3 = str3.c_str();
 
-    auto size1 = str1.lenght();
-    auto size2 = str2.lenght();
-    auto size3 = str3.lenght();
+    auto size1 = str1.length();
+    auto size2 = str2.length();
+    auto size3 = str3.length();
 
     auto newStr0 = str1 + String(" heh");
     auto newStr1 = str1 + " heh";
@@ -213,9 +213,9 @@ TEST(StringTests, StringBase16) {
     auto cstr2 = str2.c_str();
     auto cstr3 = str3.c_str();
 
-    auto size1 = str1.lenght();
-    auto size2 = str2.lenght();
-    auto size3 = str3.lenght();
+    auto size1 = str1.length();
+    auto size2 = str2.length();
+    auto size3 = str3.length();
 
     auto newStr0 = str1 + String(u" heh");
     auto newStr1 = str1 + u" heh";

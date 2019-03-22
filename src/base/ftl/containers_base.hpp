@@ -1,13 +1,15 @@
 #ifndef DECAYENGINE_CONTAINERS_BASE_HPP
 #define DECAYENGINE_CONTAINERS_BASE_HPP
 
+#include <fmt/formatTest.h>
+extern "C" {
+#include <xxhash.h>
+}
+
+#include "../baseTypes.hpp"
 #include "../traits.hpp"
 
 namespace ftl {
-    namespace details {
-
-    }
-
 
     template<typename Iter, typename Function>
     auto _iter_reduce(Iter first, Iter last, Function callback, ttr::return_type_of<Function> init)

@@ -1,6 +1,10 @@
 #ifndef DECAYENGINE_CP_STRING_HPP
 #define DECAYENGINE_CP_STRING_HPP
 
+#include <fmt/formatTest.h>
+extern "C" {
+#include <xxhash.h>
+}
 #include <utility>
 #include <ostream>
 #include <string_view>
@@ -111,7 +115,7 @@ namespace ftl {
          * Hash value depends on size of char symbol!
          * @return 64-bit FNV-1a hash
          */
-        SCA hash() {
+        SCA chash() {
             U64 hsh = 14695981039346656037ULL;
             if constexpr (std::is_same_v<CharT, Char8>) {
                 (((hsh ^= _Str) *= 1099511628211ULL), ...);
@@ -131,6 +135,10 @@ namespace ftl {
                 ), ...);
             }
             return hsh;
+        }
+
+        static U64 hash() {
+            return XXH64(c_str(), size() * sizeof(CharT), 0);
         }
 
 
@@ -196,6 +204,27 @@ namespace ftl {
 
     }
 } // namespace ftl
+
+// fmt format
+template <Char8... _Str>
+struct fmt::formatter<ftl::ConstexprString<Char8, _Str...>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const ftl::ConstexprString<Char8, _Str...>& str, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", str.c_str());
+    }
+};
+
+// std chash
+template <typename CharT, CharT... _Str>
+struct std::hash<ftl::ConstexprString<CharT, _Str...>> {
+    U64 operator()(const ftl::ConstexprString<CharT, _Str...>& str) const {
+        return str.hash();
+    }
+};
+
 
 #undef SCA  // static constexpr auto
 

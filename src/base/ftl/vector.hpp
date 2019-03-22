@@ -7,6 +7,7 @@
 #include <functional>
 #include <numeric>
 #include "containers_base.hpp"
+#include "string.hpp"
 
 namespace ftl {
     template<typename Type>
@@ -29,10 +30,10 @@ namespace ftl {
         Vector (const allocator_type& allocator) noexcept : _stl_vector(std::cref(allocator)){}
 
         explicit
-        Vector (size_t size, const allocator_type& allocator = allocator_type())
+        Vector (SizeT size, const allocator_type& allocator = allocator_type())
             : _stl_vector(size, std::cref(allocator)){}
 
-        Vector (size_t size, const Type& fillValue, const allocator_type& allocator = allocator_type())
+        Vector (SizeT size, const Type& fillValue, const allocator_type& allocator = allocator_type())
             : _stl_vector(size, std::cref(fillValue), std::cref(allocator)){}
 
         Vector (const Vector& vector, const allocator_type& allocator)
@@ -65,9 +66,9 @@ namespace ftl {
         auto data         () noexcept           -> Type*          { return _stl_vector.data(); }
         auto data         () const noexcept     -> const Type*    { return _stl_vector.data(); }
         auto empty        () const noexcept     -> bool           { return _stl_vector.empty(); }
-        auto size         () const noexcept     -> size_t         { return _stl_vector.size(); }
-        auto max_size     () const noexcept     -> size_t         { return _stl_vector.max_size(); }
-        auto capacity     () const noexcept     -> size_t         { return _stl_vector.capacity(); }
+        auto size         () const noexcept     -> SizeT          { return _stl_vector.size(); }
+        auto max_size     () const noexcept     -> SizeT          { return _stl_vector.max_size(); }
+        auto capacity     () const noexcept     -> SizeT          { return _stl_vector.capacity(); }
         auto clear        () noexcept           -> Vector&        { _stl_vector.clear();         return *this; }
         auto flip         () noexcept           -> Vector&        { _stl_vector.flip();          return *this; }
         auto shrink_to_fit()                    -> Vector&        { _stl_vector.shrink_to_fit(); return *this; }
@@ -88,14 +89,14 @@ namespace ftl {
         auto crbegin () const noexcept -> const_r_iterator { return _stl_vector.crbegin(); }
         auto crend   () const noexcept -> const_r_iterator { return _stl_vector.crend(); }
 
-        auto swap     (Vector& vector) noexcept -> Vector&     { _stl_vector.swap(vector); return *this; }
-        auto at       (size_t position)         -> RefType     { return _stl_vector.at(position); }
-        auto at       (size_t position) const   -> C_RefType   { return _stl_vector.at(position); }
-        auto reserve  (size_t size)             -> Vector&     { _stl_vector.reserve(size); return *this; }
-        auto resize   (size_t newSize)          -> Vector&     { _stl_vector.resize(newSize); return *this; }
-        auto push_back(const Type& value)       -> Vector&     { _stl_vector.push_back(value); return *this; }
+        auto swap     (Vector& vector) noexcept -> Vector&  { _stl_vector.swap(vector); return *this; }
+        auto at       (SizeT position)         -> RefType   { return _stl_vector.at(position); }
+        auto at       (SizeT position) const   -> C_RefType { return _stl_vector.at(position); }
+        auto reserve  (SizeT size)             -> Vector&   { _stl_vector.reserve(size); return *this; }
+        auto resize   (SizeT newSize)          -> Vector&   { _stl_vector.resize(newSize); return *this; }
+        auto push_back(const Type& value)       -> Vector&  { _stl_vector.push_back(value); return *this; }
 
-        auto resize (size_t newSize, const Type& fillValue) -> Vector& {
+        auto resize (SizeT newSize, const Type& fillValue) -> Vector& {
             _stl_vector.resize(newSize, fillValue);
             return *this;
         }
@@ -124,7 +125,7 @@ namespace ftl {
         auto insert(const_iterator position, std::initializer_list<Type> initList) -> iterator {
             return _stl_vector.insert(position, initList);
         }
-        auto insert(const_iterator position, size_t n, const Type& value) -> iterator {
+        auto insert(const_iterator position, SizeT n, const Type& value) -> iterator {
             return _stl_vector.insert(position, n, std::cref(value));
         }
         template<typename InpIter, typename = std::_RequireInputIter<InpIter>>
@@ -139,7 +140,7 @@ namespace ftl {
             return _stl_vector.erase(first, last);
         }
 
-        auto assign(size_t n, const Type& value) -> Vector& {
+        auto assign(SizeT n, const Type& value) -> Vector& {
             _stl_vector.assign(n, std::cref(value));
             return *this;
         }
@@ -203,7 +204,7 @@ namespace ftl {
                 for (auto &item : _stl_vector)
                     mapped.emplace_back(callback(item));
             } else if constexpr (ttr::args_count<Function> == 2) {
-                std::size_t i = 0;
+                SizeT i = 0;
                 for (auto &item : _stl_vector)
                     mapped.emplace_back(callback(item, i++));
             }
@@ -231,7 +232,7 @@ namespace ftl {
                     if (callback(item))
                         filtered.emplace_back(item);
             } else if constexpr (ttr::args_count<Function> == 2) {
-                std::size_t i = 0;
+                SizeT i = 0;
                 for (auto& item : _stl_vector)
                     if (callback(item, i++))
                         filtered.emplace_back(item);
@@ -258,7 +259,7 @@ namespace ftl {
                 for (auto &item : _stl_vector)
                     callback(item);
             } else if constexpr (ttr::args_count<Function> == 2) {
-                std::size_t i = 0;
+                SizeT i = 0;
                 for (auto &item : _stl_vector)
                     callback(item, i++);
             }
@@ -279,13 +280,13 @@ namespace ftl {
             return *this;
         }
 
-        auto to_string() const -> std::string {
+        auto to_string() const -> ftl::String {
             auto sstream = std::stringstream();
             print(sstream);
             return sstream.str();
         }
 
-        virtual void print(std::ostream& os) const {
+        void print(std::ostream& os = std::cout) const {
             switch (size()) {
                 case 0: os << "{}"; return;
                 case 1: os << "{ " << front() << "} "; return;
@@ -297,7 +298,7 @@ namespace ftl {
             }
         }
 
-        void print() { print(std::cout); }
+        U64 hash() const { return XXH64(_stl_vector.data(), _stl_vector.size() * sizeof(Type), 0); }
 
 
         // Operators
@@ -314,10 +315,10 @@ namespace ftl {
             return *this;
         }
 
-        auto operator[] (size_t position) noexcept -> RefType {
+        auto operator[] (SizeT position) noexcept -> RefType {
             return _stl_vector[position];
         }
-        auto operator[] (size_t position) const noexcept -> C_RefType {
+        auto operator[] (SizeT position) const noexcept -> C_RefType {
             return _stl_vector[position];
         }
 
@@ -325,7 +326,7 @@ namespace ftl {
 
 
     private:
-        template<typename InpIter, typename RetType, typename Function, std::size_t _StartI = 0>
+        template<typename InpIter, typename RetType, typename Function, SizeT _StartI = 0>
         auto _iter_reduce(InpIter first, InpIter last, RetType init, Function callback) const ->
         std::enable_if_t<ftl::function_traits<Function>::arity == 2, typename ftl::function_traits<Function>::return_type> {
             for (; first != last; ++first)
@@ -333,10 +334,10 @@ namespace ftl {
             return init;
         }
 
-        template<typename InpIter, typename RetType, typename Function, std::size_t _StartI = 0>
+        template<typename InpIter, typename RetType, typename Function, SizeT _StartI = 0>
         auto _iter_reduce(InpIter first, InpIter last, RetType init, Function callback) const ->
         std::enable_if_t<ftl::function_traits<Function>::arity == 3, typename ftl::function_traits<Function>::return_type> {
-            for (std::size_t i = _StartI; first != last; ++first)
+            for (SizeT i = _StartI; first != last; ++first)
                 init = callback(init, *first, i++);
             return init;
         }
@@ -346,12 +347,25 @@ namespace ftl {
     };
 }
 
+// fmt format
+template <typename Type>
+struct fmt::formatter<ftl::Vector<Type>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
+    template <typename FormatContext>
+    auto format(const ftl::Vector<Type>& vec, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", vec.to_string());
+    }
+};
 
-//namespace std {
-//    template<typename Type>
-//    std::ostream& operator<< (const ftl::Vector<Type>& vector) { vector.print(); }
-//}
+// std chash
+template <typename Type>
+struct std::hash<ftl::Vector<Type>> {
+    U64 operator()(const ftl::Vector<Type>& vec) const {
+        return vec.hash();
+    }
+};
 
 
 #endif //UNTITLED6_VECTOR_HPP
