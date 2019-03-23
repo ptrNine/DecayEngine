@@ -4,6 +4,7 @@
 #include "../base/baseTypes.hpp"
 #include "../base/allocators/ObjectPool.hpp"
 
+using base::ObjectPool;
 
 class DummyDefaultConstructorClass {
 public:

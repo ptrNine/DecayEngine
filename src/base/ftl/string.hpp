@@ -306,6 +306,8 @@ namespace ftl {
 
         // Operators
 
+        inline auto& operator=(const StringBase& str) { _str_v = str._str_v; return *this; }
+
         inline auto operator==(const StringBase& str) const { return _str_v == str._str_v; }
         inline auto operator!=(const StringBase& str) const { return _str_v != str._str_v; }
 
@@ -440,6 +442,12 @@ namespace ftl {
             return os;
         }
 
+        using StdStrCrefT = const std::basic_string<CharT>&;
+        using StdStrRefT  = std::basic_string<CharT>&;
+
+        operator StdStrCrefT() const noexcept { return _str_v; }
+        operator StdStrRefT () noexcept       { return _str_v; }
+
         friend void swap (StringBase& a, StringBase& b) {
             std::swap(a._str_v, b._str_v);
         }
@@ -461,6 +469,14 @@ namespace ftl {
     using String32 = StringBase<Char32>;
 
 } // namespace ftl
+
+//
+namespace std {
+    // Todo: move
+    inline ostream& operator<< (ostream& os, Byte byte) {
+        return os << hex << U32(byte);
+    }
+}
 
 // fmt format
 template <>

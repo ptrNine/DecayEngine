@@ -11,6 +11,7 @@ add_executable(Tests
         mathVectorTests.cpp
         formatTest.cpp
         ../base/time.cpp
-        )
-target_link_libraries(Tests Threads::Threads libgtest.a fmt)
+        FileTests.cpp
+        ../base/files.cpp)
+target_link_libraries(Tests Threads::Threads libgtest.a fmt -lstdc++fs)
 add_test(NAME Tests COMMAND Tests)

@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-using Byte    = unsigned char;
+using Byte    = std::byte;
 
 using U8      = std::uint8_t;
 using U16     = std::uint16_t;

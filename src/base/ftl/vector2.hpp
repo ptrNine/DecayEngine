@@ -282,12 +282,12 @@ namespace ftl {
     using Vector2f32 = Vector2Flt<Float32>;
     using Vector2f64 = Vector2Flt<Float64>;
 
-    template <typename Type, std::enable_if_t<concepts::integers<Type>>...>
-    ICA Vector2T(Type x, Type y) {
+    template <typename Type>
+    ICA Vector2T(Type x, Type y) -> std::enable_if_t<concepts::integers<Type>, Vector2<Type>> {
         return Vector2<Type>(x, y);
     }
-    template <typename Type, std::enable_if_t<concepts::floats<Type>>...>
-    ICA Vector2T(Type x, Type y) {
+    template <typename Type>
+    ICA Vector2T(Type x, Type y) -> std::enable_if_t<concepts::floats<Type>, Vector2Flt<Type>> {
         return Vector2Flt<Type>(x, y);
     }
 

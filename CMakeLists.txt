@@ -16,8 +16,8 @@ set(DECAY_EXECUTABLE
         src/graphics/gui/UiBuilder.cpp
         src/base/logs.cpp
         src/base/configs.cpp
-        src/base/time.cpp)
+        src/base/time.cpp src/base/files.cpp src/base/files.hpp)
 add_subdirectory(src)
 
 add_executable(DecayEngine ${DECAY_EXECUTABLE})
-target_link_libraries(DecayEngine luajit-5.1 xxhash fmt)
+target_link_libraries(DecayEngine luajit-5.1 xxhash fmt -lstdc++fs)
