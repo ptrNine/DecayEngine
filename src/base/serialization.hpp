@@ -29,6 +29,14 @@ namespace concepts {
     constexpr bool serializable = detail_srlz::srlz<T>::value;
 }
 
+#define SERIALIZE_METHOD_CONST_SIZE() \
+    constexpr auto c_serialize_size() const
+
+#define SERIALIZE_METHOD_SIZE() \
+    auto serialize_size() const
+
+#define SERIALIZE_METHOD() \
+    void serialize_impl(Byte* _serializer, SizeT _serializer_pos = 0) const
 
 #define SERIALIZE_START(BUFFER) SizeT _serializer_pos = 0; auto _serializer = (BUFFER)
 
@@ -70,6 +78,9 @@ namespace srlz {
     -> std::enable_if_t<CONCEPTS_MEMBER_EXISTS(T, serialize_impl)> {
         val.serialize_impl(buf);
     }
+
+
+
     template <typename T>
     inline constexpr auto _sizeof_tmpl(const T&)
     -> std::enable_if_t<concepts::numbers<T>, SizeT> {
@@ -85,6 +96,21 @@ namespace srlz {
     -> std::enable_if_t<CONCEPTS_MEMBER_EXISTS(T, serialize_size), SizeT> {
         return v.serialize_size();
     }
+
+    // Containers
+    template <typename T, SizeT _Size>
+    inline constexpr auto _sizeof_tmpl(const ftl::Array<T, _Size>& v) {
+        return _Size * sizeof(T);
+    }
+    template <typename T>
+    inline auto _sizeof_tmpl(const ftl::Vector<T>& vec) {
+        return vec.size() * sizeof(T);
+    }
+    template <typename T>
+    inline auto _sizeof_tmpl(const ftl::StringBase<T>& vec) {
+        return vec.size() * sizeof(T);
+    }
+
 
 
 

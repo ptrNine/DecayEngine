@@ -16,23 +16,27 @@ namespace base {
         FileWriter(const std::string_view& name);
 
         template <SizeT _Size>
-        void write_bytes(const ftl::Array<Byte, _Size>& array) {
+        void write(const ftl::Array<Byte, _Size>& array) {
+            auto lock = std::lock_guard(_mutex);
             _ofs.write(reinterpret_cast<const char*>(array.data()), _Size);
         }
 
-        void write_bytes(const ftl::Vector<Byte>& bytes) {
+        void write(const ftl::Vector<Byte>& bytes) {
+            auto lock = std::lock_guard(_mutex);
             _ofs.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
         }
 
         template <typename T>
         void write(const T& value) {
-            write_bytes(srlz::serialize(value));
+            write(srlz::serialize(value));
         }
 
     protected:
         std::ofstream _ofs;
         std::mutex    _mutex;
     };
+
+
 
 } // namespace base
 

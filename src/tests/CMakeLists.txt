@@ -12,6 +12,7 @@ add_executable(Tests
         formatTest.cpp
         ../base/time.cpp
         FileTests.cpp
-        ../base/files.cpp)
+        ../base/files.cpp
+        serializeTests.cpp)
 target_link_libraries(Tests Threads::Threads libgtest.a fmt -lstdc++fs)
 add_test(NAME Tests COMMAND Tests)

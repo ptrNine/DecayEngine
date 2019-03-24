@@ -1,6 +1,7 @@
 #ifndef DECAYENGINE_STRING_HPP
 #define DECAYENGINE_STRING_HPP
 
+#include <iomanip>
 #include "containers_base.hpp"
 #include "cp_string.hpp"
 #include "../baseTypes.hpp"
@@ -474,7 +475,7 @@ namespace ftl {
 namespace std {
     // Todo: move
     inline ostream& operator<< (ostream& os, Byte byte) {
-        return os << hex << U32(byte);
+        return os << "0x" << hex << setfill('0') << setw(2) << U32(byte);
     }
 }
 
