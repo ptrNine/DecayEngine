@@ -24,7 +24,7 @@ namespace ftl {
         ~Vector () noexcept = default;
 
         // Constructors
-        Vector  () noexcept = default;
+        Vector  () noexcept : _stl_vector() {}
 
         explicit
         Vector (const allocator_type& allocator) noexcept : _stl_vector(std::cref(allocator)){}

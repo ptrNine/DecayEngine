@@ -44,6 +44,12 @@ namespace concepts {
     srlz::_serialize_tmpl(_serializer + _serializer_pos, (VALUE)); \
     _serializer_pos += srlz::_sizeof_tmpl(VALUE)
 
+#define SERIALIZE_ARRAY(PTR, SIZE) { \
+    auto temp = srlz::_sizeof_array_tmpl(PTR, SIZE); \
+    srlz::_serialize_array_tmpl(_serializer + _serializer_pos, PTR, SIZE, temp); \
+    _serializer_pos += srlz::_sizeof_array_unpacker(temp, SIZE); \
+}
+
 
 
 namespace srlz {
@@ -79,8 +85,6 @@ namespace srlz {
         val.serialize_impl(buf);
     }
 
-
-
     template <typename T>
     inline constexpr auto _sizeof_tmpl(const T&)
     -> std::enable_if_t<concepts::numbers<T>, SizeT> {
@@ -97,27 +101,66 @@ namespace srlz {
         return v.serialize_size();
     }
 
-    // Containers
-    template <typename T, SizeT _Size>
-    inline constexpr auto _sizeof_tmpl(const ftl::Array<T, _Size>& v) {
-        return _Size * sizeof(T);
-    }
+    // static elements
     template <typename T>
-    inline auto _sizeof_tmpl(const ftl::Vector<T>& vec) {
-        return vec.size() * sizeof(T);
+    auto _serialize_array_tmpl(Byte* buf, const T* array, SizeT count, SizeT itemSize) {
+        if constexpr (sizeof(T) == 1) { // Todo: Is there a one byte class with defined serialize methods?
+            memcpy(buf, array, count);
+        } else {
+            repeat(count) {
+                _serialize_tmpl(buf, *array++);
+                buf += itemSize;
+            }
+        }
     }
+    // dynamic elements
     template <typename T>
-    inline auto _sizeof_tmpl(const ftl::StringBase<T>& vec) {
-        return vec.size() * sizeof(T);
+    auto _serialize_array_tmpl(Byte* buf, const T* array,
+                               [[maybe_unused]]SizeT count,
+                               const std::pair<ftl::Vector<SizeT>, SizeT>& itemSizes)
+    {
+        for (auto& size : itemSizes.first) {
+            _serialize_tmpl(buf, *array++);
+            buf += size;
+        }
     }
 
+    template <typename T>
+    inline constexpr auto _sizeof_array_tmpl(const T*, SizeT size)
+    -> std::enable_if_t<concepts::numbers<T>, SizeT> {
+        return sizeof(T);
+    }
+    template <typename T>
+    inline constexpr auto _sizeof_array_tmpl(const T* v, SizeT size)
+    -> std::enable_if_t<CONCEPTS_MEMBER_EXISTS(T, c_serialize_size), SizeT> {
+        return v->c_serialize_size();
+    }
+    template <typename T>
+    inline auto _sizeof_array_tmpl(const T* v, SizeT size)
+    -> std::enable_if_t<CONCEPTS_MEMBER_EXISTS(T, serialize_size), std::pair<ftl::Vector<SizeT>, SizeT>> {
+        using ReturnT = std::pair<ftl::Vector<SizeT>, SizeT>;
+        auto itemSizes = ReturnT(ftl::Vector<SizeT>(size, 0), 0);
 
+        for (auto& item : itemSizes.first) {
+            auto sz = (v++)->serialize_size();
+            item = sz;
+            itemSizes.second += sz;
+        }
+
+        return std::move(itemSizes);
+    }
+    inline SizeT _sizeof_array_unpacker(const std::pair<ftl::Vector<SizeT>, SizeT>& p, SizeT size) {
+        return p.second;
+    }
+    inline SizeT _sizeof_array_unpacker(SizeT s, SizeT size) {
+        return s * size;
+    }
 
 
 
     template <typename T>
     auto serialize(const T& val) {
-        static_assert(
+        /*static_assert(
                 concepts::numbers<T> || (
                 CONCEPTS_MEMBER_EXISTS(T, c_serialize_size) ||
                 CONCEPTS_MEMBER_EXISTS(T, serialize_size)),
@@ -127,20 +170,35 @@ namespace srlz {
                 concepts::numbers<T> || (
                 CONCEPTS_MEMBER_EXISTS(T, serialize_impl)),
                 "Can't find serialize_impl member");
+                */
 
-        if constexpr (CONCEPTS_MEMBER_EXISTS(T, c_serialize_size) || concepts::numbers<T>) {
+        if constexpr (concepts::numbers<T> || CONCEPTS_MEMBER_EXISTS(T, c_serialize_size)) {
             constexpr auto size = _sizeof_tmpl(val);
             auto buf = ftl::Array<Byte, size>();
             _serialize_tmpl(buf.data(), val);
-            return buf;
+            return std::move(buf);
         }
         else if constexpr (CONCEPTS_MEMBER_EXISTS(T, serialize_size)) {
             auto buf = ftl::Vector<Byte>(_sizeof_tmpl(val), Byte(0));
             _serialize_tmpl(buf.data(), val);
-            return buf;
+            return std::move(buf);
         }
     }
 
+    template <typename T>
+    auto serialize(const T* array, SizeT count) {
+        auto realSize  = _sizeof_array_tmpl(array, count);
+        auto buf       = ftl::Vector<Byte>();
+
+        if constexpr (std::is_same_v<decltype(realSize), SizeT>)
+            buf.resize(realSize * count, Byte(0));
+        else
+            buf.resize(realSize.second, Byte(0));
+
+        _serialize_array_tmpl(buf.data(), array, count, realSize);
+
+        return std::move(buf);
+    }
 }
 
 #endif //DECAYENGINE_SERIALIZATION_HPP
