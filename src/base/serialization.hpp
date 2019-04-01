@@ -50,6 +50,11 @@ namespace concepts {
     _serializer_pos += srlz::_sizeof_array_unpacker(temp, SIZE); \
 }
 
+#define SERIALIZE_GET_SIZE_ARRAY(PTR, SIZE) \
+    srlz::_sizeof_array_unpacker(srlz::_sizeof_array_tmpl((PTR), (SIZE)), SIZE)
+
+#define SERIALIZE_GET_SIZE(VALUE) \
+    srlz::_sizeof_tmpl(VALUE)
 
 
 namespace srlz {

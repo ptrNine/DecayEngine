@@ -13,8 +13,8 @@ TEST(Serialization, Numbers) {
     S32 cs = 0x33445566;
     S64 ds = 0x1122334455667788ULL;
 
-    float  f  = 25.5f;
-    double f2 = 25.5f;
+    Float32 f  = 25.5f;
+    Float64 f2 = 25.5f;
 
     ASSERT_TRUE(srlz::serialize(a).to_string()  == "{ 0x24 }");
     ASSERT_TRUE(srlz::serialize(b).to_string()  == "{ 0x22, 0x33 }");
@@ -179,17 +179,17 @@ struct ComplexS {
 
     SERIALIZE_METHOD_SIZE() {
         return
-        sizeof(a) +
-        b.serialize_size() +
-        array.size() +
-        sizeof(U32) +
-        vec.reduce([](SizeT r, const ClassPtrTD& c) { return r + c.serialize_size(); });
+        SERIALIZE_GET_SIZE(a) +
+        SERIALIZE_GET_SIZE(b) +
+        SERIALIZE_GET_SIZE_ARRAY(array.data(), array.size()) +
+        SERIALIZE_GET_SIZE(array.size()) +
+        SERIALIZE_GET_SIZE_ARRAY(vec.data(), vec.size());
     }
     SERIALIZE_METHOD() {
         SERIALIZE(a);
         SERIALIZE(b);
         SERIALIZE_ARRAY(array.data(), array.size());
-        SERIALIZE(U32(vec.size()));
+        SERIALIZE(vec.size());
         SERIALIZE_ARRAY(vec.data(), vec.size());
     }
 };
@@ -208,10 +208,11 @@ TEST(Serialization, ComplexClassSerialization) {
         "{ 0x11, 0x00, 0x22, 0x00, 0x33, 0x00, 0x44, 0x00, "
           "0x00, 0x00, 0x00, 0x06, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, "
           "0xff, 0xfe, 0x07, 0x06, 0x05, "
-          "0x00, 0x00, 0x00, 0x03, "
+          "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, "
           "0x00, 0x00, 0x00, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, "
           "0x00, 0x00, 0x00, 0x07, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, "
           "0x00, 0x00, 0x00, 0x04, 0x01, 0x02, 0x03, 0x04 }");
 
+    //std::accumulate(a.array.data(), a.array.data() + a.array.size(), SizeT(0), []())
     //std::cout << srlz::serialize(a) << std::endl;
 }

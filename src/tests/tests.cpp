@@ -4,6 +4,20 @@
 #include "../base/flags.hpp"
 #include "../base/math.hpp"
 #include "../base/lang_defines.hpp"
+#include "../base/baseTypes.hpp"
+
+TEST(Memtests, SizeofTypes) {
+    ASSERT_EQ(sizeof(U8 ), 1);
+    ASSERT_EQ(sizeof(U16), 2);
+    ASSERT_EQ(sizeof(U32), 4);
+    ASSERT_EQ(sizeof(U64), 8);
+    ASSERT_EQ(sizeof(S8 ), 1);
+    ASSERT_EQ(sizeof(S16), 2);
+    ASSERT_EQ(sizeof(S32), 4);
+    ASSERT_EQ(sizeof(S64), 8);
+    ASSERT_EQ(sizeof(Float32), 4);
+    ASSERT_EQ(sizeof(Float64), 8);
+}
 
 TEST(BASE, Flags) {
     using flagger = base::Flags<uint32_t>;
