@@ -7,12 +7,11 @@ struct S {
     int b;
     float c;
 
-    constexpr auto c_serialize_size() const {
+    SERIALIZE_METHOD_CONST_SIZE() {
         return sizeof(S);
     }
 
-    void serialize_impl(Byte* ptr) const {
-        SERIALIZE_START(ptr);
+    SERIALIZE_METHOD() {
         SERIALIZE(a);
         SERIALIZE(b);
         SERIALIZE(c);
@@ -23,12 +22,11 @@ struct A {
     S s;
     int b;
 
-    constexpr auto c_serialize_size() const {
+    SERIALIZE_METHOD_CONST_SIZE() {
         return sizeof(A);
     }
 
-    void serialize_impl(Byte* ptr) const {
-        SERIALIZE_START(ptr);
+    SERIALIZE_METHOD() {
         SERIALIZE(s);
         SERIALIZE(b);
     }

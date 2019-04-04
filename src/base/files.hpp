@@ -27,9 +27,15 @@ namespace base {
         }
 
         template <typename T>
-        void write(const T& value) {
+        auto write(const T& value) -> std::enable_if_t<IS_SERIALIZABLE_IMPL(T)> {
             write(srlz::serialize(value));
         }
+
+        template <typename T>
+        auto write(const T* data, SizeT size) -> std::enable_if_t<IS_SERIALIZABLE_IMPL(T)> {
+            write(srlz::serialize(data, size));
+        }
+
 
     protected:
         std::ofstream _ofs;
