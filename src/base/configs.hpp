@@ -361,17 +361,6 @@ namespace base {
         static auto readerUnpackMulti
         (StrViewCref name, StrViewCref section, StrViewCref str, SizeT required = 0) -> StrvVector;
 
-        auto unpackSingle    (PathCref path, SizeT lineNum, StrViewCref line) const -> StrView;
-        auto unpackMulti
-        (PathCref path, SizeT lineNum, StrViewCref line, Char8 delim = ' ', SizeT required = 0) const -> StrvVector;
-
-        auto unpackVariables (PathCref path, SizeT lineNum, StrViewCref str) -> ftl::String;
-        auto pairFromLine    (PathCref path, SizeT lineNum, StrViewCref line, Char8 delim = ' ') const -> StrViewPair;
-        void deleteComments  (PathCref path, StrvVector& lines) const;
-        void preprocessorTask(PathCref path, SizeT lineNum, StrViewCref line);
-        void parseLinesTask  (PathCref path, StrvVector& lines);
-        void processFileTask (PathCref path = cfg_detls::cfg_state().cfgPath);
-
         void load();
 
 
