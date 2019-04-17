@@ -2,6 +2,7 @@
 #define UIBUILDER_ATOUI_HPP
 
 #include <type_traits>
+#include "assert.hpp"
 
 #define white_space(c) ((c) == ' ' || (c) == '\t')
 #define valid_digit(c) ((c) >= '0' && (c) <= '9')
@@ -78,16 +79,12 @@ namespace base {
             }
         }
 
-        // Todo: asserts!
-        while (white_space(*p)) { ++p; }
-        //R_ASSERTF(*p == '\0', "string '%s' has not null terminator", p);
-
         if (neg) { r = -r; }
         return r;
     }
 
     template<typename T>
-    auto aton(const char *p) -> std::enable_if_t<std::is_signed_v<T>, T> {
+    auto aton(const char *p) -> std::enable_if_t<std::is_signed_v<T> && std::is_integral_v<T>, T> {
         while (white_space(*p)) { ++p; }
 
         auto r = static_cast<T>(0);
@@ -107,12 +104,6 @@ namespace base {
             ++p;
         }
 
-        // Todo: asserts!
-        //R_ASSERTF(!read_check, "string '%s' not a integer number", p);
-
-        while (white_space(*p)) { ++p; }
-        //R_ASSERTF(*p == '\0', "string '%s' has not null terminator", p);
-
         if (neg) { r = -r; }
         return r;
     }
@@ -129,12 +120,6 @@ namespace base {
             r = (r * 10) + (*p - '0');
             ++p;
         }
-
-        // Todo: asserts!
-        //R_ASSERTF(!read_check, "string '%s' not a unsigned integer number", p);
-
-        while (white_space(*p)) { ++p; }
-        //R_ASSERTF(*p == '\0', "string '%s' has not null terminator", p);
 
         return r;
     }

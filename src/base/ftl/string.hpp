@@ -8,6 +8,9 @@
 #include "../concepts.hpp"
 
 namespace ftl {
+    template<typename T>
+    class Vector;
+
     template <typename CharT>
     class StringBase {
         static_assert(
@@ -22,6 +25,7 @@ namespace ftl {
         using C_IterT  = typename std::basic_string<CharT>::const_iterator;
         using R_IterT  = typename std::basic_string<CharT>::const_iterator;
         using CR_IterT = typename std::basic_string<CharT>::const_reverse_iterator;
+        using StrView  = std::basic_string_view<CharT>;
 
     public:
         static constexpr auto npos = std::basic_string<CharT>::npos;
@@ -445,9 +449,11 @@ namespace ftl {
 
         using StdStrCrefT = const std::basic_string<CharT>&;
         using StdStrRefT  = std::basic_string<CharT>&;
+        using StdStrView  = std::basic_string_view<CharT>;
 
-        operator StdStrCrefT() const noexcept { return _str_v; }
-        operator StdStrRefT () noexcept       { return _str_v; }
+        operator StdStrCrefT () const noexcept { return _str_v; }
+        operator StdStrRefT  () noexcept       { return _str_v; }
+        operator StdStrView  () const noexcept { return StdStrView(_str_v.data()); }
 
         friend void swap (StringBase& a, StringBase& b) {
             std::swap(a._str_v, b._str_v);
@@ -460,6 +466,15 @@ namespace ftl {
         }
 
         U64 hash() const { return XXH64(_str_v.c_str(), _str_v.length() * sizeof(CharT), 0); }
+
+        auto splitView(CharT c) const            -> Vector<StrView>;
+        auto splitView(const StrView& str) const -> Vector<StrView>;
+        auto split    (CharT c) const            -> Vector<StringBase<CharT>>;
+        auto split    (const StrView& str) const -> Vector<StringBase<CharT>>;
+
+
+        auto splitView(std::initializer_list<CharT> l, bool createNullStrs = false) const -> Vector<StrView>;
+        auto split    (std::initializer_list<CharT> l, bool createNullStrs = false) const -> Vector<StringBase<CharT>>;
 
     protected:
         std::basic_string<CharT> _str_v;

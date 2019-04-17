@@ -1,5 +1,5 @@
-#ifndef UNTITLED6_VECTOR_HPP
-#define UNTITLED6_VECTOR_HPP
+#ifndef DECAYENGINE_VECTOR_HPP
+#define DECAYENGINE_VECTOR_HPP
 
 #include <vector>
 #include <iostream>
@@ -21,6 +21,8 @@ namespace ftl {
         using C_RefType        = typename std::vector<Type>::const_reference;
 
     public:
+        using ValType = Type;
+
         ~Vector () noexcept = default;
 
         // Constructors
@@ -289,7 +291,7 @@ namespace ftl {
         void print(std::ostream& os = std::cout) const {
             switch (size()) {
                 case 0: os << "{}"; return;
-                case 1: os << "{ " << front() << "} "; return;
+                case 1: os << "{ " << front() << " }"; return;
                 default:
                     os << "{ " << front();
                     for (auto it = cbegin() + 1; it != cend(); ++it)
@@ -303,11 +305,11 @@ namespace ftl {
 
         // Operators
         auto operator= (const Vector& vector) -> Vector& {
-            _stl_vector.operator=(std::cref(vector));
+            _stl_vector.operator=(std::cref(vector._stl_vector));
             return *this;
         }
         auto operator= (Vector&& vector) noexcept -> Vector& {
-            _stl_vector.operator=(std::move(vector));
+            _stl_vector.operator=(std::move(vector._stl_vector));
             return *this;
         }
         auto operator= (std::initializer_list<Type> initList) -> Vector& {
@@ -320,6 +322,17 @@ namespace ftl {
         }
         auto operator[] (SizeT position) const noexcept -> C_RefType {
             return _stl_vector[position];
+        }
+
+        bool operator== (const Vector& vector) const {
+            if (size() != vector.size())
+                return false;
+
+            for (SizeT i = 0; i < size(); ++i) {
+                if (operator[](i) != vector[i])
+                    return false;
+            }
+            return true;
         }
 
         friend std::ostream& operator<< (std::ostream& os, const Vector& vector) { vector.print(os); return os; }
@@ -359,7 +372,7 @@ struct fmt::formatter<ftl::Vector<Type>> {
     }
 };
 
-// std chash
+// std hash
 template <typename Type>
 struct std::hash<ftl::Vector<Type>> {
     U64 operator()(const ftl::Vector<Type>& vec) const {
@@ -368,4 +381,4 @@ struct std::hash<ftl::Vector<Type>> {
 };
 
 
-#endif //UNTITLED6_VECTOR_HPP
+#endif //DECAYENGINE_VECTOR_HPP

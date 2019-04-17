@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 #include "../base/flags.hpp"
 #include "../base/math.hpp"
-#include "../base/lang_defines.hpp"
+#include "../base/defines.hpp"
 #include "../base/baseTypes.hpp"
 
 TEST(Memtests, SizeofTypes) {
@@ -60,6 +60,12 @@ TEST(MATH, fastSqrRoot) {
 
 #include "../base/ftl/array.hpp"
 #include "../base/ftl/vector.hpp"
+#include "../base/logs.hpp"
+
+
+// Logger mock
+base::Logger::Logger() {}
+base::Logger::~Logger() {}
 
 #define EVAL_POWER_OF_TWO(x) \
 ASSERT_TRUE(math::is_power_of_two_v<array[(x) * 8 + 0]>); \

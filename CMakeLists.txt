@@ -16,7 +16,10 @@ set(DECAY_EXECUTABLE
         src/graphics/gui/UiBuilder.cpp
         src/base/logs.cpp
         src/base/configs.cpp
-        src/base/time.cpp src/base/files.cpp src/base/files.hpp)
+        src/base/time.cpp
+        src/base/files.cpp
+        src/base/files.hpp
+        src/base/ftl/string.cpp)
 add_subdirectory(src)
 
 add_executable(DecayEngine ${DECAY_EXECUTABLE})

@@ -1,7 +1,7 @@
 #ifndef TILEENGINE_TBOBJECTPOOL_HPP
 #define TILEENGINE_TBOBJECTPOOL_HPP
 
-#include <cassert>
+#include "../assert.hpp"
 
 namespace base {
     template<typename Type>
@@ -39,7 +39,7 @@ namespace base {
             if (_allocated_blocks != _size)
                 return new(getFreeBlock()) Type(args...);
             else {
-                assert(0);// Todo: assert: can't allocate memory
+                RABORTF("{}", "Can't allocate memory.");
                 return nullptr;
             }
         }
@@ -48,7 +48,7 @@ namespace base {
             if (_allocated_blocks != _size)
                 return new(getFreeBlock()) Type();
             else {
-                assert(0);
+                RABORTF("{}", "Can't allocate memory.");
                 return nullptr;
             }
         }

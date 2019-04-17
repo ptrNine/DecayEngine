@@ -12,10 +12,13 @@ namespace ftl {
     template <typename Type, SizeT _Size>
     class Array {
     public:
+        using ValType        = Type;
         using Iterator       = typename std::array<Type, _Size>::iterator;
         using ConstIterator  = typename std::array<Type, _Size>::const_iterator;
         using RIterator      = typename std::array<Type, _Size>::reverse_iterator;
         using ConstRIterator = typename std::array<Type, _Size>::const_reverse_iterator;
+
+        static constexpr SizeT ArraySize = _Size;
 
     protected:
         template <typename Function, SizeT pos, SizeT count>

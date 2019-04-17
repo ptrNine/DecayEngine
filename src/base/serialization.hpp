@@ -2,9 +2,9 @@
 #define DECAYENGINE_SERIALIZATION_HPP
 #include "ftl/array.hpp"
 #include "ftl/vector.hpp"
-#include "lang_defines.hpp"
+#include "defines.hpp"
 
-
+// Todo: refactor array implementation (add serialization of array size to dynamic arrays)
 #define SERIALIZE_METHOD_CONST_SIZE() \
     static constexpr auto c_serialize_size()
 

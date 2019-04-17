@@ -13,6 +13,9 @@ add_executable(Tests
         ../base/time.cpp
         FileTests.cpp
         ../base/files.cpp
-        serializeTests.cpp)
-target_link_libraries(Tests Threads::Threads libgtest.a fmt -lstdc++fs)
+        serializeTests.cpp
+        ../base/ftl/string.cpp
+        ConfigTests.cpp
+        ../base/configs.cpp)
+target_link_libraries(Tests Threads::Threads libgtest.a fmt -lstdc++fs xxhash)
 add_test(NAME Tests COMMAND Tests)

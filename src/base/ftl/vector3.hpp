@@ -22,6 +22,8 @@ namespace ftl {
         static_assert(concepts::numbers<Type>, "Template type must be number");
 
     public:
+        using ValType = Type;
+
         constexpr Vector3() noexcept : _x(0), _y(0), _z(0) {}
 
         constexpr Vector3(const Vector3& vec) noexcept
@@ -280,13 +282,13 @@ namespace ftl {
     using Vector3f32 = Vector3Flt<Float32>;
     using Vector3f64 = Vector3Flt<Float64>;
 
-    template <typename Type, std::enable_if_t<concepts::integers<Type>>...>
-    ICA Vector3T(Type x, Type y) {
-        return Vector3<Type>(x, y);
+    template <typename Type>
+    ICA Vector3T(Type x, Type y, Type z) -> std::enable_if_t<concepts::integers<Type>, Vector3<Type>> {
+        return Vector3<Type>(x, y, z);
     }
-    template <typename Type, std::enable_if_t<concepts::floats<Type>>...>
-    ICA Vector3T(Type x, Type y) {
-        return Vector3Flt<Type>(x, y);
+    template <typename Type>
+    ICA Vector3T(Type x, Type y, Type z) -> std::enable_if_t<concepts::floats<Type>, Vector3Flt<Type>> {
+        return Vector3Flt<Type>(x, y, z);
     }
 
     template <typename OutType, typename InType, std::enable_if_t<concepts::integers<InType>>...>

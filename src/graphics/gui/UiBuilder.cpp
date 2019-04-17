@@ -14,7 +14,7 @@ bool r_bool(const char* str) {
     if      (scmp(str, "true"))  return true;
     else if (scmp(str, "false")) return false;
 
-    // Todo: assert!
+    ABORTF("'{}' is not 'false' or 'true'", str);
     return false;
 }
 
@@ -31,7 +31,6 @@ void UIContainer::initFromXmlNodeChildren(rapidxml::xml_node<>* node) {
     for (auto n = node->first_node(); n; n = n->next_sibling())
         _children.push_back(createFromNode(n)->initFromXmlNode(n));
 }
-
 
 void UIWindow::present(nk_context* context) {
     std::cout << "Present window" << std::endl;

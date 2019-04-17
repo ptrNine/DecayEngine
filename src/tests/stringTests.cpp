@@ -440,3 +440,83 @@ TEST(StringTests, Algorithm) {
     ASSERT_EQ(3, str22.find_last_not_of(String("strng")));
     ASSERT_EQ(4, str22.find_last_not_of('g'));
 }
+
+TEST(StringTests, Split) {
+    using Str = ftl::String;
+    using Vec = ftl::Vector<std::string_view>;
+
+    ASSERT_TRUE(Str("").splitView(' ').empty());
+    ASSERT_TRUE(Str(" ").splitView(' ').empty());
+    ASSERT_TRUE(Str("  ").splitView(' ').empty());
+    ASSERT_TRUE(Str("   ").splitView(' ').empty());
+
+    ASSERT_TRUE(Str("abc").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str(" abc").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("  abc").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("   abc").splitView(' ') == Vec{"abc"});
+
+    ASSERT_TRUE(Str("abc ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("abc  ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("abc   ").splitView(' ') == Vec{"abc"});
+
+    ASSERT_TRUE(Str(" abc ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str(" abc  ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("  abc ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("  abc  ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("  abc   ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("   abc  ").splitView(' ') == Vec{"abc"});
+    ASSERT_TRUE(Str("   abc   ").splitView(' ') == Vec{"abc"});
+
+    ASSERT_TRUE(Str("  abc   xyz kek 228 ").splitView(' ').to_string() == "{ abc, xyz, kek, 228 }");
+
+
+    ASSERT_TRUE(Str("").splitView("||").empty());
+    ASSERT_TRUE(Str("||").splitView("||").empty());
+    ASSERT_TRUE(Str("||||").splitView("||").empty());
+    ASSERT_TRUE(Str("||||||").splitView("||").empty());
+
+    ASSERT_TRUE(Str("abc").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||abc").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||abc").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||||abc").splitView("||") == Vec{"abc"});
+
+    ASSERT_TRUE(Str("abc||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("abc||||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("abc||||||").splitView("||") == Vec{"abc"});
+
+    ASSERT_TRUE(Str("||abc||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||abc||||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||abc||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||abc||||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||abc||||||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||||abc||||").splitView("||") == Vec{"abc"});
+    ASSERT_TRUE(Str("||||||abc||||||").splitView("||") == Vec{"abc"});
+
+    ASSERT_TRUE(Str("||||abc||||||xyz||kek||228||").splitView("||").to_string() == "{ abc, xyz, kek, 228 }");
+
+
+
+    ASSERT_TRUE(Str("").splitView({' ', '\n'}).empty());
+    ASSERT_TRUE(Str("\n").splitView({' ', '\n'}).empty());
+    ASSERT_TRUE(Str(" \n").splitView({' ', '\n'}).empty());
+    ASSERT_TRUE(Str(" \n ").splitView({' ', '\n'}).empty());
+
+    ASSERT_TRUE(Str("abc").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str(" abc").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("\n abc").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("\n  abc").splitView({' ', '\n'}) == Vec{"abc"});
+
+    ASSERT_TRUE(Str("abc\n").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("abc\n ").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("abc \n ").splitView({' ', '\n'}) == Vec{"abc"});
+
+    ASSERT_TRUE(Str(" abc\n").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str(" abc \n").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str(" \nabc ").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("\n\nabc\n\n").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str("  abc \n\n").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str(" \n abc\n ").splitView({' ', '\n'}) == Vec{"abc"});
+    ASSERT_TRUE(Str(" \n abc \n\n").splitView({' ', '\n'}) == Vec{"abc"});
+
+    ASSERT_TRUE(Str(" \nabc \n xyz\nkek 228\n").splitView({' ', '\n'}).to_string() == "{ abc, xyz, kek, 228 }");
+}

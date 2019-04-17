@@ -23,6 +23,8 @@ namespace ftl {
         static_assert(concepts::numbers<Type>, "Template type must be number");
 
     public:
+        using ValType = Type;
+
         constexpr Vector2() noexcept : _x(0), _y(0) {}
 
         constexpr Vector2(const Vector2& vec) noexcept
@@ -152,6 +154,12 @@ namespace ftl {
         ICA& operator*=(const Type& val) noexcept { return makeScalarMul(val); }
         ICA& operator/=(const Type& val)          { return makeScalarDiv(val); }
 
+        ICA& operator=(const Vector2& r) noexcept {
+            _x = r._x;
+            _y = r._y;
+            return *this;
+        }
+
         template<SizeT _pos>
         friend constexpr auto get(Vector2<Type> &v) noexcept -> Type & {
             if constexpr (_pos == 0) return v._x;
@@ -220,6 +228,12 @@ namespace ftl {
         template<std::size_t _steps = 1>
         IA fastNormalize() const { Vector2Flt((*this) * fastInvMagnitude<_steps>()); }
         IA normalize    () const { return inherited::scalarMul(fastInvMagnitude<VECTOR_FISR_ITERS_COUNT>()); }
+
+        ICA& operator=(const Vector2Flt& r) noexcept {
+            this->_x = r._x;
+            this->_y = r._y;
+            return *this;
+        }
 
         /*
         IA& makeRawPerpendicular() {
