@@ -5,7 +5,9 @@
 #include "src/base/logs.hpp"
 
 int main() {
-    base::Log("ъеъ");
+    base::cfg::cfg();
+    base::cfg_detls::cfgData()._print_info();
+    //base::Log("ъеъ");
     //UIBuilder builder("/mnt/sda6-drive/Repos/DecayEngine/testGamedata/ui/gui.xml");
     //builder.present(nullptr);
 

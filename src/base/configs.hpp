@@ -253,7 +253,12 @@ namespace base {
             return readTupleImpl<T1, T2, Ts...>(vec, name, section, is);
         }
 
+
+        SIA remove_space_bounds_if_exists(StrViewCref str) -> StrView;
+        SIA remove_brackets_if_exists    (StrViewCref str) -> StrView;
+
     private:
+
 
         // Basic read method
         SIA readString(StrViewCref name, StrViewCref section) -> ftl::String& {
@@ -297,17 +302,7 @@ namespace base {
         template <typename T>
         SIA superCast(StrViewCref str, StrViewCref, StrViewCref)
         -> std::enable_if_t<concepts::any_of<T, ftl::String, std::string_view>, T> {
-            StrView s = str;
-
-            // Remove brackets
-            if (s.size() > 1) {
-                if (s[0] == '\"' && s.back() == '\"')
-                    s = s.substr(1, s.size() - 2);
-                else if (s[0] == '\'' && s.back() == '\'')
-                    s = s.substr(1, s.size() - 2);
-            }
-
-            return s;
+            return str;
         }
 
         // Array

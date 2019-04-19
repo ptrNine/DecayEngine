@@ -4,12 +4,12 @@
 namespace base::cfg_detls {
     auto Section::getValue(StringCref key) const -> StringCref {
         auto val = _pairs.find(key);
-        RASSERTF(val != _pairs.end(), "Can't find value at key '{}' in section[{}]", key, _name);
+        RASSERTF(val != _pairs.end(), "Can't find key '{}' in section [{}]", key, _name);
         return val->second;
     }
     auto Section::getValue(StringCref key) -> StringRef {
         auto val = _pairs.find(key);
-        RASSERTF(val != _pairs.end(), "Can't find value at key '{}' in section[{}]", key, _name);
+        RASSERTF(val != _pairs.end(), "Can't find key '{}' in section [{}]", key, _name);
         return val->second;
     }
     auto Section::value(StringCref key) -> StringRef {
@@ -162,12 +162,50 @@ inline bool is_space(Char8 c) {
     return c == ' ' || c == '\t';
 }
 
+inline bool is_bracket(Char8 c) {
+    return c == '\'' || c == '\"';
+}
+
+inline bool is_legal_name_symbol(Char8 c) {
+    return c == '@' || c == '.' || c =='/' || c == '\\';
+}
+
+inline bool is_symbol(Char8 c) {
+    return c == ',' || c == ';' || c == '#' || c == '[' || c == ']' ||
+           c == '-' || c == '+' || c == '=' || c == '$' || c == '{' ||
+           c == '}' || c == ':' || is_legal_name_symbol(c) || is_bracket(c);
+}
+
+inline bool validate_name_symbol(Char8 c) {
+    return is_plain_text(c) || is_digit(c) || is_legal_name_symbol(c);
+}
+
+inline bool validate_symbol(Char8 c) {
+    return is_space(c) || is_digit(c) || is_plain_text(c) || is_symbol(c);
+}
+
+
+// Skip spaces, return true if end passed
+template <typename IterT>
+inline bool skip_spaces_if_no_endl(IterT& ptr, IterT end) {
+    while(is_space(*ptr) && ptr != end)
+        ++ptr;
+
+    return ptr == end;
+}
+
+// Skip spaces, return true if beg passed
+template <typename IterT>
+inline bool rskip_spaces_if_no_beg(IterT& ptr, IterT beg) {
+    while(is_space(*ptr) && ptr != beg)
+        --ptr;
+
+    return ptr == beg;
+}
+
 #define IS_WHITE_SPACE(CH)                 ((CH) == ' ' || (CH) == '\t')
 #define SKIP_WHITE_SPACE(ITR, ENDL)        while(IS_WHITE_SPACE(*(ITR)) && (ITR) != (ENDL)) ++(ITR)
 #define SKIP_BEFORE_WHITE_SPACE(ITR, ENDL) while(!IS_WHITE_SPACE(*(ITR)) && (ITR) != (ENDL)) ++(ITR)
-
-
-
 
 
 using StrvStrvMap = ska::flat_hash_map<std::string_view, std::string_view>;
@@ -178,8 +216,381 @@ using StrViewPair = std::pair<StrView, StrView>;
 using Path        = std::filesystem::path;
 using PathRef     = Path&;
 using PathCref    = const Path&;
+using String      = ftl::String;
+namespace cfg_detls = base::cfg_detls;
 
 
+auto base::ConfigManager::remove_space_bounds_if_exists(StrViewCref str) -> StrView {
+    auto start = str.cbegin();
+    auto last  = str.cend() - 1;
+
+    if (!skip_spaces_if_no_endl(start, last)) {
+        if (!rskip_spaces_if_no_beg(last, start))
+            return str.substr(start - str.cbegin(), last - start + 1);
+    }
+
+    return {};
+}
+
+auto base::ConfigManager::remove_brackets_if_exists(StrViewCref str) -> StrView {
+    if (str.length() > 1 && is_bracket(str.front()) && str.back() == str.front())
+        return str.substr(1, str.length() - 2);
+    return str;
+}
+
+
+void deleteComments  (PathCref path, StrvVector& lines); // Delete comments and check all symbols
+void processFileTask (PathCref path = cfg_detls::cfg_state().cfgPath);
+void parseLinesTask  (PathCref path, StrvVector& lines);
+void preprocessorTask(PathCref path, SizeT lineNum, StrViewCref line);
+auto pairFromLine    (PathCref path, SizeT lineNum, StrViewCref line) -> StrViewPair;
+auto unpackVariable  (PathCref path, SizeT lineNum, StrViewCref line) -> String;
+
+
+auto unpackVariable (PathCref path, SizeT lineNum, StrViewCref line) -> String {
+    auto ptr     = line.begin();
+    auto pathStr = path.string();
+
+    bool onSingleQuotes = false;
+    bool onDoubleQuotes = false;
+
+    auto result = String();
+    result.reserve(line.length());
+
+    for (; ptr != line.cend();) {
+        if (*ptr == '\'' && !onDoubleQuotes)
+            onSingleQuotes = !onSingleQuotes;
+
+        else if (*ptr == '\"' && !onSingleQuotes)
+            onDoubleQuotes = !onDoubleQuotes;
+
+        else if (onSingleQuotes || onDoubleQuotes) {
+            result.push_back(*ptr);
+        }
+        else {
+            if (*ptr == '$') {
+                ++ptr; // Skip '$'
+
+                ////////// Read key
+
+                RASSERTF(ptr != line.cend(), "Empty key after '$' in file '{}' at line {}.", pathStr, lineNum + 1);
+
+                RASSERTF(!is_digit(*ptr),
+                         "Starting key with digit '{}' in file '{}' at line {}.",
+                         *ptr, pathStr, lineNum + 1);
+
+                auto start = ptr;
+
+                while(!is_space(*ptr) && *ptr != ':' && ptr != line.cend()) {
+                    RASSERTF(validate_name_symbol(*ptr),
+                             "Invalid character '{}' in key after '$' in file '{}' at line {}.",
+                             *ptr, pathStr, lineNum + 1);
+                    ++ptr;
+                }
+
+                auto val   = StrView();
+                auto first = line.substr(start - line.cbegin(), ptr - start);
+
+                skip_spaces_if_no_endl(ptr, line.cend());
+
+                ////////// Dereference key
+                if (ptr == line.cend() || *ptr != ':')
+                    //////// Read value from global namespaces
+                    val = cfg_detls::cfgData().getValue(cfg_detls::GLOBAL_NAMESPACE, first);
+                else if (*ptr == ':'){
+                    //////// Read value from section (only no-parents section supported)
+                    ++ptr; // skip ':'
+
+                    RASSERTF(!skip_spaces_if_no_endl(ptr, line.cend()),
+                            "Empty key after ':' in file '{}' at line {}.", pathStr, lineNum + 1);
+
+                    RASSERTF(!is_digit(*ptr),
+                             "Starting key name with digit '{}' in file '{}' at line {}.",
+                             *ptr, pathStr, lineNum + 1);
+
+                    auto start2 = ptr;
+
+                    while(!is_space(*ptr) && *ptr != ':' && ptr != line.cend()) {
+                        RASSERTF(validate_name_symbol(*ptr),
+                                 "Invalid character '{}' in key after '$' in file '{}' at line {}.",
+                                 *ptr, pathStr, lineNum + 1);
+                        ++ptr;
+                    }
+
+                    auto second = line.substr(start2 - line.cbegin(), ptr - start2);
+
+                    RASSERTF(cfg_detls::cfgData().getSection(first).getParents().empty(),
+                            "Attempt to dereference key '{}' from section [{}] with parent "
+                            "in file '{}' at line {}.", second, first, pathStr, lineNum + 1);
+
+                    val = cfg_detls::cfgData().getValue(first, second);
+                }
+
+                result += base::ConfigManager::remove_brackets_if_exists(val);
+                continue;
+            }
+            else if (!is_space(*ptr)) {
+                result.push_back(*ptr);
+            }
+        }
+
+        ++ptr;
+    }
+
+    return std::move(result);
+}
+
+auto pairFromLine(PathCref path, SizeT lineNum, StrViewCref line) -> StrViewPair {
+    auto pathStr = path.string();
+    auto ptr     = line.cbegin();
+
+    if (skip_spaces_if_no_endl(ptr, line.cend()))
+        return {};
+
+    /////////// Read name
+
+    auto start = ptr;
+
+    RASSERTF(!is_digit(*ptr),
+             "Starting key with digit '{}' in file '{}' at line {}.",
+             *ptr, pathStr, lineNum + 1);
+
+    while(!is_space(*ptr) && ptr != line.cend()) {
+        RASSERTF(validate_name_symbol(*ptr),
+                 "Invalid character '{}' in key definition in file '{}' at line {}.",
+                 *ptr, pathStr, lineNum + 1);
+        ++ptr;
+    }
+
+    auto key = line.substr(start - line.cbegin(), ptr - start);
+
+
+    //////////// Read values (no space deleting inside values)
+
+    RASSERTF(!skip_spaces_if_no_endl(ptr, line.cend()),
+            "Missing value at key '{}' in file '{}' at line {}.", key, pathStr, lineNum + 1);
+
+    RASSERTF(*ptr == '=',
+            "Missing delimiter '=' at key '{}' in file '{}' at line {}.", key, pathStr, lineNum + 1);
+        ++ptr;
+
+    auto value = base::ConfigManager::
+            remove_space_bounds_if_exists(line.substr(ptr - line.cbegin(), line.end() - ptr));
+
+    RASSERTF(!value.empty(),
+             "Missing value at key '{}' in file '{}' at line {}.", key, pathStr, lineNum + 1);
+
+    return StrViewPair(key, value);
+}
+
+
+void deleteComments(PathCref path, StrvVector& lines) {
+    auto strPath = path.string();
+
+    for (SizeT n = 0; n < lines.size(); ++n) {
+        bool onSingleQuotes = false;
+        bool onDoubleQuotes = false;
+
+        auto& line = lines[n];
+        auto  i    = line.begin();
+
+        for (; i != line.end(); ++i) {
+            if (*i == '\'' && !onDoubleQuotes)
+                onSingleQuotes = !onSingleQuotes;
+
+            else if (*i == '\"' && !onSingleQuotes)
+                onDoubleQuotes = !onDoubleQuotes;
+
+            else if (!onSingleQuotes && !onDoubleQuotes) {
+                RASSERTF(validate_symbol(*i),
+                        "Undefined char symbol '{}' [{}] in '{}' at line {}.",
+                        *i, U32(U8(*i)), strPath, n + 1);
+
+                if (*i == ';' || (*i == '/' && *(i + 1) == '/')) {
+                    line = line.substr(0, i - line.begin());
+                    break;
+                }
+            }
+        }
+
+        RASSERTF(!onSingleQuotes, "Missing second \' quote in '{}' at line {}.", strPath, n + 1);
+        RASSERTF(!onDoubleQuotes, "Missing second \" quote in '{}' at line {}.", strPath, n + 1);
+    }
+}
+
+void preprocessorTask(PathCref path, SizeT lineNum, StrViewCref line) {
+    auto strPath = path.string();
+    auto ptr     = line.cbegin();
+
+    ++ptr; // skip '#'
+
+    RASSERTF(!skip_spaces_if_no_endl(ptr, line.cend()),
+            "Empty preprocessor directive in file '{}' at line {}.", strPath, lineNum + 1);
+
+    auto start = ptr;
+
+    while (!is_space(*ptr) && ptr != line.cend()) {
+        RASSERTF(is_plain_text(*ptr),
+                "Invalid character in preprocessor directive in file '{}' at line {}.",
+                strPath, lineNum + 1);
+        ++ptr;
+    }
+
+    auto first    = line.substr(start - line.cbegin(), ptr - start);
+    auto backline = line.substr(ptr - line.cbegin(), line.cend() - ptr);
+
+    if (first == "include") {
+        auto appendPath =
+                base::ConfigManager::remove_brackets_if_exists(
+                        base::ConfigManager::remove_space_bounds_if_exists(backline));
+
+        RASSERTF(!appendPath.empty(),
+                "Empty path in include directive '{}' at line {}.", strPath, lineNum + 1);
+
+        processFileTask(path.parent_path() / appendPath);
+    } else {
+
+        RASSERTF(0, "Unknown preprocessor directive '#{}' in '{}' at line {}.", first, strPath, lineNum + 1);
+    }
+}
+
+
+void parseLinesTask(PathCref path, StrvVector& lines) {
+    using cfg_detls::Section;
+    using cfg_detls::cfgData;
+
+    auto pathStr = path.string();
+
+    Section* currentSection = nullptr;
+
+    for (SizeT n = 0; n < lines.size(); ++n) {
+        auto& line = lines[n];
+        auto  ptr  = line.cbegin();
+
+        if (skip_spaces_if_no_endl(ptr, line.cend()))
+            continue;
+        ////////////////////////////////////// Section /////////////////////////////////////////
+        if (*ptr == '[') {
+            auto start = ++ptr;
+
+            ////////////// Read section
+
+            RASSERTF(!is_digit(*ptr),
+                     "Starting section with digit '{}' in file '{}' at line {}.",
+                     *ptr, pathStr, n + 1);
+
+            while(*ptr != ']' && ptr != line.cend()) {
+                RASSERTF(validate_name_symbol(*ptr),
+                        "Invalid character '{}' in section definition in file '{}' at line {}.",
+                        *ptr, pathStr, n + 1);
+                ++ptr;
+            }
+
+            RASSERTF(*ptr == ']',
+                    "Missing close section bracket in '{}' at line {}.", pathStr, n + 1);
+
+            currentSection =
+                    &cfgData().addSection(pathStr, n, line.substr(start - line.cbegin(), ptr - start));
+
+            ++ptr; // skip ']'
+
+            if (skip_spaces_if_no_endl(ptr, line.cend()))
+                continue;
+
+
+            /////////////// Read parents
+
+            RASSERTF(*ptr == ':',
+                     "Unexpected symbol '{}' after section [{}] definition in '{}' at line {}.",
+                     *ptr, currentSection->name(), pathStr, n+ 1);
+
+            ++ptr; // skip ':'
+
+            RASSERTF(!skip_spaces_if_no_endl(ptr, line.cend()),
+                    "Missing parents sections after ':' in '{}' at line {}.",
+                    pathStr, n + 1);
+
+
+
+            while(ptr != line.end()) {
+                auto start2 = ptr;
+
+                RASSERTF(!is_digit(*ptr),
+                         "Starting parent definition with digit '{}' in file '{}' at line {}.",
+                         *ptr, pathStr, n + 1);
+
+                while(!is_space(*ptr) && ptr != line.cend() && *ptr != ',') {
+                    RASSERTF(validate_name_symbol(*ptr),
+                             "Invalid character '{}' in parent definition in file '{}' at line {}.",
+                             *ptr, pathStr, n + 1);
+                    ++ptr;
+                }
+
+                currentSection->addParent(line.substr(start2 - line.cbegin(), ptr - start2));
+
+                if (skip_spaces_if_no_endl(ptr, line.cend()))
+                    break;
+
+                RASSERTF(*ptr == ',',
+                         "Missing ',' after parent definition in '{}' at line {}.", pathStr, n + 1);
+
+                ++ptr;
+
+                RASSERTF(!skip_spaces_if_no_endl(ptr, line.cend()),
+                         "Missing parent parent definition after ',' in '{}' at line {}.",
+                         pathStr, n + 1);
+            }
+        }
+
+        //////////////////////////// Preprocessor task //////////////////////////////////////
+        else if (*ptr == '#') {
+            preprocessorTask(path, n, line.substr(ptr - line.begin()));
+        }
+
+        //////////////////////////////// Read variables /////////////////////////////////////
+        else {
+            auto pair = pairFromLine(path, n, line);
+
+            auto var  = unpackVariable(path, n, pair.second);
+
+            if (currentSection)
+                currentSection->add(pair.first, var);
+            else {
+                RASSERTF(!cfgData().section(cfg_detls::GLOBAL_NAMESPACE).isExists(pair.first),
+                         "Duplicate variable '{}' in global namespace in file '{}' at line {}.",
+                         pair.first, pathStr, n + 1);
+
+                cfgData().addValue(cfg_detls::GLOBAL_NAMESPACE, pair.first, var);
+            }
+
+            /*auto start = ptr;
+            auto pair  = pairFromLine(path, n, line, '=');
+
+            // Variables impl
+            auto realVars = unpackVariables(path, n, pair.second);
+
+            // Add pairs to sections
+            if (currentSection) {
+                currentSection->add(pair.first, realVars);
+            } else {
+                RASSERTF(!cfgData().section(base::cfg_detls::GLOBAL_NAMESPACE).isExists(pair.first),
+                         "Duplicate variable '{}' in global namespace in file '{}' at line {}.",
+                         pair.first, pathStr, n + 1);
+                cfgData().addValue(base::cfg_detls::GLOBAL_NAMESPACE, pair.first, realVars);
+            }*/
+        }
+    }
+}
+
+void processFileTask(PathCref path) {
+    auto file  = base::readFileToString(path, true);       // no log mode
+    auto lines = file.splitView({'\n', '\r', '\0'}, true); // do not delete empty strings
+
+    deleteComments(path, lines);
+    parseLinesTask(path, lines);
+}
+
+/*
 auto unpackSingle    (PathCref path, SizeT lineNum, StrViewCref line) -> StrView;
 auto unpackMulti
 (PathCref path, SizeT lineNum, StrViewCref line, Char8 delim = ' ', SizeT required = 0) -> StrvVector;
@@ -523,6 +934,7 @@ void processFileTask(PathCref path) {
 
 }
 
+ */
 
 namespace base {
     auto splitView(const std::string_view& str, Char8 c) -> ftl::Vector<std::string_view> {
@@ -567,6 +979,7 @@ namespace base {
             StrViewCref str,
             SizeT       required) -> StrvVector
     {
+        if
         auto vec = splitView(str, ',');
 
         // Remove brackets
