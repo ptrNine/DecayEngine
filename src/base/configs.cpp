@@ -245,7 +245,8 @@ auto base::ConfigManager::remove_brackets_if_exists(StrViewCref str) -> StrView 
 
 
 void deleteComments  (PathCref path, StrvVector& lines); // Delete comments and check all symbols
-void processFileTask (PathCref path = cfg_detls::cfg_state().cfgPath);
+void processFileTask (PathCref path);
+void processFileTask ();
 void parseLinesTask  (PathCref path, StrvVector& lines);
 void preprocessorTask(PathCref path, SizeT lineNum, StrViewCref line);
 auto pairFromLine    (PathCref path, SizeT lineNum, StrViewCref line) -> StrViewPair;
@@ -579,6 +580,11 @@ void processFileTask(PathCref path) {
 
     deleteComments(path, lines);
     parseLinesTask(path, lines);
+}
+
+void processFileTask() {
+    for (auto& path : cfg_detls::cfg_state().getEntries())
+        processFileTask(path);
 }
 
 namespace base {

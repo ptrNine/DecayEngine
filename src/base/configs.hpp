@@ -14,6 +14,8 @@
 
 namespace base {
 
+    class ConfigManager;
+
     namespace cfg_detls {
         static constexpr inline std::string_view GLOBAL_NAMESPACE = "__global";
 
@@ -22,10 +24,28 @@ namespace base {
         }
 
         class CfgCreationState {
+            friend ConfigManager;
         public:
-            bool onCreate  = false;
-            bool isCreated = false;
-            std::filesystem::path cfgPath = DEFAULT_CFG_PATH();
+            void clearCfgEntries() {
+                _cfgEntries.clear();
+            }
+
+            void addCfgEntry(const std::filesystem::path& path) {
+                _cfgEntries.push_back(path);
+            }
+
+            bool onCreate () const { return _onCreate; }
+            bool isCreated() const { return _isCreated; }
+
+            const auto& getEntries() const {
+                return _cfgEntries;
+            }
+
+        private:
+            bool _onCreate  = false;
+            bool _isCreated = false;
+
+            ftl::Vector<std::filesystem::path> _cfgEntries;
 
             // Singleton impl
         public:
@@ -38,8 +58,11 @@ namespace base {
                 return inst;
             }
 
-        protected:
-            CfgCreationState () = default;
+        private:
+            CfgCreationState () {
+                // Add default cfgPath
+                _cfgEntries.emplace_back(DEFAULT_CFG_PATH());
+            }
             ~CfgCreationState() = default;
         };
 
@@ -383,10 +406,10 @@ namespace base {
 
     private:
         ConfigManager () {
-            cfg_detls::cfg_state().onCreate  = true;
+            cfg_detls::cfg_state()._onCreate  = true;
             load();
-            cfg_detls::cfg_state().onCreate  = false;
-            cfg_detls::cfg_state().isCreated = true;
+            cfg_detls::cfg_state()._onCreate  = false;
+            cfg_detls::cfg_state()._isCreated = true;
         }
         ~ConfigManager() = default;
     };
@@ -396,9 +419,21 @@ namespace base {
     namespace cfg {
         using StrViewCref = const std::string_view&;
 
-        inline void force_set_cfg_path(const std::filesystem::path& path) {
-            cfg_detls::cfg_state().cfgPath = path;
+        /**
+         * Add entry file to loading
+         * @param path - path to config entry file
+         */
+        inline void addCfgEntry(std::filesystem::path& path) {
+            cfg_detls::cfg_state().addCfgEntry(path);
         }
+
+        /**
+         * Remove all entry files
+         */
+        inline void resetCfgEntries() {
+            cfg_detls::cfg_state().clearCfgEntries();
+        }
+
         /**
          * Get instance of ConfigManager
          * @return reference to ConfigManager
@@ -530,7 +565,7 @@ namespace base {
          */
         template <typename T>
         IA force_read_ie(StrViewCref name, const T& def_val) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ie<T>(name, def_val);
             else
                 return read_ie<T>(name, def_val);
@@ -545,7 +580,7 @@ namespace base {
          */
         template <typename T1, typename T2, typename... Ts>
         IA force_read_ie(StrViewCref name, const std::tuple<T1, T2, Ts...>& def_vals) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ie<T1, T2, Ts...>(name, def_vals);
             else
                 return read_ie<T1, T2, Ts...>(name, def_vals);
@@ -561,7 +596,7 @@ namespace base {
          */
         template <typename T>
         IA force_read_ie(StrViewCref name, StrViewCref section, const T& def_val) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ie<T>(name, section, def_val);
             else
                 return read_ie<T>(name, section, def_val);
@@ -577,7 +612,7 @@ namespace base {
          */
         template <typename T1, typename T2, typename... Ts>
         IA force_read_ie(StrViewCref name, StrViewCref section, const std::tuple<T1, T2, Ts...>& def_vals) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ie<T1, T2, Ts...>(name, section, def_vals);
             else
                 return read_ie<T1, T2, Ts...>(name, section, def_vals);
@@ -595,7 +630,7 @@ namespace base {
          */
         template <typename T>
         IA force_read_ive(StrViewCref name, const T& def_val) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ive<T>(name, def_val);
             else
                 return read_ive<T>(name, def_val);
@@ -610,7 +645,7 @@ namespace base {
          */
         template <typename T1, typename T2, typename... Ts>
         IA force_read_ive(StrViewCref name, const std::tuple<T1, T2, Ts...>& def_vals) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ive<T1, T2, Ts...>(name, def_vals);
             else
                 return read_ive<T1, T2, Ts...>(name, def_vals);
@@ -626,7 +661,7 @@ namespace base {
          */
         template <typename T>
         IA force_read_ive(StrViewCref name, StrViewCref section, const T& def_val) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ive<T>(name, section, def_val);
             else
                 return read_ive<T>(name, section, def_val);
@@ -642,7 +677,7 @@ namespace base {
          */
         template <typename T1, typename T2, typename... Ts>
         IA force_read_ive(StrViewCref name, StrViewCref section, const std::tuple<T1, T2, Ts...>& def_vals) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read_ive<T1, T2, Ts...>(name, section, def_vals);
             else
                 return read_ive<T1, T2, Ts...>(name, section, def_vals);
@@ -659,7 +694,7 @@ namespace base {
         IA force_read(
                 const std::string_view &name,
                 const std::string_view &section = cfg_detls::GLOBAL_NAMESPACE) {
-            if (cfg_detls::cfg_state().onCreate)
+            if (cfg_detls::cfg_state().onCreate())
                 return ConfigManager::force_read<Ts...>(name, section);
             else
                 return read<Ts...>(name, section);
