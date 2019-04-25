@@ -305,6 +305,18 @@ namespace base {
             return str;
         }
 
+        template <typename T>
+        SIA superCast(StrViewCref str, StrViewCref name, StrViewCref section)
+        -> std::enable_if_t<std::is_same_v<T, bool>, bool> {
+            if (str == "true" || str == "on")
+                return true;
+            else if (str == "false" || str == "off")
+                return false;
+            else
+                RABORTF("Unknown bool value '{}' at key '{}' in section [{}].", str, name, section);
+            return false; // !?
+        }
+
         // Array
         template <typename A, typename T = typename A::ValType, SizeT _Size = A::ArraySize>
         SIA superCast(StrViewCref str, StrViewCref name, StrViewCref section)
