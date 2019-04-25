@@ -35,8 +35,8 @@ namespace details {
             const char* strexp
     ) {
         if (!expr) {
-            auto msg = fmt::format("\nFATAL ERROR:\nfile: {}\nfunc: {}\nline: {}\nexpr: {}",
-                    file, func, line, strexp);
+            auto msg = fmt::format("\nFATAL ERROR:\nfile: {}:{}\nfunc: {}\nline: {}\nexpr: {}",
+                    file, line, func, line, strexp);
             base::Log("{}", msg);
             std::cerr << msg << std::endl;
             std::abort();
@@ -54,8 +54,8 @@ namespace details {
             ArgT... args
     ) {
         if (!expr) {
-            auto msg = fmt::format("\nFATAL ERROR:\nfile: {}\nfunc: {}\nline: {}\nexpr: {}\nwhat: {}",
-                    file, func, line, strexp, fmt::format(format, args...));
+            auto msg = fmt::format("\nFATAL ERROR:\nfile: {}:{}\nfunc: {}\nline: {}\nexpr: {}\nwhat: {}",
+                    file, line, func, line, strexp, fmt::format(format, args...));
             base::Log("{}", msg);
             std::cerr << msg << std::endl;
             std::abort();
