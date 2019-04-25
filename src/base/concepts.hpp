@@ -24,7 +24,7 @@ namespace concepts {
     constexpr bool floats = std::is_floating_point_v<std::remove_const_t<std::remove_reference_t<T>>>;
 
     template <typename T>
-    constexpr bool integers = std::is_integral_v<std::remove_const_t<std::remove_reference_t<T>>>;
+    constexpr bool integers = std::is_integral_v<std::remove_const_t<std::remove_reference_t<T>>> && !std::is_same_v<T, bool>;
 
     template <typename T>
     constexpr bool numbers = integers<T> || floats<T>;
