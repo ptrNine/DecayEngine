@@ -24,8 +24,10 @@ TEST(ConfigTests, TestSection) {
     namespace cfg = base::cfg;
     using String  = ftl::String;
 
-    cfg::force_set_cfg_path(
-            std::filesystem::current_path().parent_path().parent_path().parent_path() / "fs.cfg");
+    auto test_config = std::filesystem::current_path().parent_path().parent_path().parent_path() / "test.cfg";
+    cfg::resetCfgEntries();
+    cfg::addCfgEntry(test_config);
+
 
     // Global section
 
