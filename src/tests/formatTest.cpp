@@ -18,10 +18,10 @@ TEST(Format, Vector2) {
 
 TEST(Format, Vector3) {
     ftl::Vector3u a {15, 20, 12};
-    ftl::Vector3d b {15.5, 13.9, 0.00};
+    ftl::Vector3d b {15.5, 13.9, 0.1};
 
     ASSERT_EQ(fmt::format("{}", a), "{ 15, 20, 12 }");
-    ASSERT_EQ(fmt::format("{}", b), "{ 15.5, 13.9, 0.0 }");
+    ASSERT_EQ(fmt::format("{}", b), "{ 15.5, 13.9, 0.1 }");
 }
 
 TEST(Format, Vector) {

@@ -1,7 +1,7 @@
 #ifndef DECAYENGINE_CP_STRING_HPP
 #define DECAYENGINE_CP_STRING_HPP
 
-#include <fmt/formatTest.h>
+#include <fmt/format.h>
 extern "C" {
 #include <xxhash.h>
 }
