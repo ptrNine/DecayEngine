@@ -1,7 +1,7 @@
 #pragma once
 
-#include <filesystem>
 #include <flat_hash_map.hpp>
+#include "filesystem.hpp"
 #include "defines.hpp"
 #include "ftl/string.hpp"
 #include "ftl/vector.hpp"
@@ -20,7 +20,7 @@ namespace base {
         static constexpr inline std::string_view GLOBAL_NAMESPACE = "__global";
 
         static inline auto DEFAULT_CFG_PATH() {
-            return std::filesystem::current_path().parent_path() / "fs.cfg";
+            return fs::current_path().parent_path() / "fs.cfg";
         }
 
         class CfgCreationState {
@@ -30,7 +30,7 @@ namespace base {
                 _cfgEntries.clear();
             }
 
-            void addCfgEntry(const std::filesystem::path& path) {
+            void addCfgEntry(const ftl::String& path) {
                 _cfgEntries.push_back(path);
             }
 
@@ -45,7 +45,7 @@ namespace base {
             bool _onCreate  = false;
             bool _isCreated = false;
 
-            ftl::Vector<std::filesystem::path> _cfgEntries;
+            ftl::Vector<ftl::String> _cfgEntries;
 
             // Singleton impl
         public:
@@ -423,7 +423,7 @@ namespace base {
          * Add entry file to loading
          * @param path - path to config entry file
          */
-        inline void addCfgEntry(std::filesystem::path& path) {
+        inline void addCfgEntry(ftl::String& path) {
             cfg_detls::cfg_state().addCfgEntry(path);
         }
 

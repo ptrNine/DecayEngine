@@ -1,52 +1,30 @@
 #include "files.hpp"
 #include "assert.hpp"
+#include "filesystem.hpp"
 
-namespace fs = std::filesystem;
-
-base::FileWriter::FileWriter(const std::string_view& name, bool noLog)  {
+base::FileWriter::FileWriter(const std::string_view& name)  {
     auto lock = std::lock_guard(_mutex);
 
-    auto path   = fs::path(name);
+    auto path   = ftl::String(name);
     auto parent = path.parent_path();
 
     std::error_code code;
 
-    if (!parent.empty() && !fs::exists(parent))
-        fs::create_directories(parent, code);
-
-    if (code) {
-        if (noLog) {
-            std::cerr << "Can't create directories at path \'" << parent.string() << "\'\n" << code.message() << std::endl;
-            std::abort();
-        } else {
-            RABORTF("Can't create directories at path \'{}\'", parent.string());
-        }
-    }
+    if (!parent.empty())
+        fs::create_dir(parent);
 
     _ofs.open(name.data(), std::ios_base::binary | std::ios_base::out);
 
-    if (!_ofs.is_open()) {
-        if (noLog) {
-            std::cerr << "Can't open file: \'" << name << "\'" << std::endl;
-            std::abort();
-        } else {
-            RABORTF("Can't open file: \'{}\'", name);
-        }
-    }
+    if (!_ofs.is_open())
+        RABORTF("Can't open file: \'{}\'", name);
 }
 
 
-base::FileReader::FileReader(const std::string_view &name, bool noLog) {
+base::FileReader::FileReader(const std::string_view& name) {
     _ifs.open(name.data(), std::ios_base::binary | std::ios_base::in);
 
-    if (!_ifs.is_open()) {
-        if (noLog) {
-            std::cerr << "Can't open file: \'" << name << "\'" << std::endl;
-            std::abort();
-        } else {
-            RABORTF("Can't open file: \'{}\'", name);
-        }
-    }
+    if (!_ifs.is_open())
+        RABORTF("Can't open file: \'{}\'", name);
 
     _ifs.seekg(0, std::ios_base::end);
     _size = static_cast<SizeT>(_ifs.tellg());
@@ -69,22 +47,22 @@ auto base::FileReader::readAllToString() -> ftl::String {
     return std::move(str);
 }
 
-void base::writeBytesToFile(const fs::path& path, const ftl::Vector<Byte>& bytes, bool noLog) {
-    auto fw = FileWriter(path.string(), noLog);
+void base::writeBytesToFile(const ftl::String& path, const ftl::Vector<Byte>& bytes) {
+    auto fw = FileWriter(path);
     fw.write(bytes);
 }
 
-void base::writeBytesToFile(const fs::path& path, const Byte* bytes, SizeT size, bool noLog) {
-    auto fw = FileWriter(path.string(), noLog);
+void base::writeBytesToFile(const ftl::String& path, const Byte* bytes, SizeT size) {
+    auto fw = FileWriter(path);
     fw.write(bytes, size);
 }
 
-auto base::readFileToBytes(const fs::path& path, bool noLog) -> ftl::Vector<Byte> {
-    auto fr = FileReader(path.string(), noLog);
+auto base::readFileToBytes(const ftl::String& path) -> ftl::Vector<Byte> {
+    auto fr = FileReader(path);
     return std::move(fr.readAllToBytes());
 }
 
-auto base::readFileToString(const fs::path& path, bool noLog) -> ftl::String {
-    auto fr = FileReader(path.string(), noLog);
+auto base::readFileToString(const ftl::String& path) -> ftl::String {
+    auto fr = FileReader(path);
     return std::move(fr.readAllToString());
 }

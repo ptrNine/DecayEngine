@@ -17,6 +17,7 @@ add_executable(Tests
         ../base/ftl/string.cpp
         ConfigTests.cpp
         ../base/configs.cpp
-        ../base/logs.cpp)
-target_link_libraries(Tests Threads::Threads libgtest.a fmt -lstdc++fs xxhash)
+        ../base/logs.cpp
+        ../base/filesystem.cpp)
+target_link_libraries(Tests Threads::Threads libgtest.a fmt xxhash)
 add_test(NAME Tests COMMAND Tests)

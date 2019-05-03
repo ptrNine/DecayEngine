@@ -24,7 +24,7 @@ TEST(ConfigTests, TestSection) {
     namespace cfg = base::cfg;
     using String  = ftl::String;
 
-    auto test_config = std::filesystem::current_path().parent_path().parent_path().parent_path() / "test.cfg";
+    auto test_config = base::fs::current_path().parent_path().parent_path().parent_path() / "test.cfg";
     cfg::resetCfgEntries();
     cfg::addCfgEntry(test_config);
 

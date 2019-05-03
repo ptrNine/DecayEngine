@@ -89,7 +89,7 @@ struct ComplexS {
     }
 };
 
-#include <filesystem>
+#include "../base/filesystem.hpp"
 
 TEST(FileTests, Serialize_Deserialize) {
     auto a = ComplexS<5>();
@@ -102,10 +102,10 @@ TEST(FileTests, Serialize_Deserialize) {
 
     auto b = ComplexS<5>();
 
-    ftl::String path = std::filesystem::current_path().string() + "/test.txt";
+    ftl::String path = base::fs::current_path() / "test.txt";
 
-    base::writeBytesToFile(path.data(), a.serialize());
-    b.deserialize(base::readFileToBytes(path.data()).data());
+    base::writeBytesToFile(path, a.serialize());
+    b.deserialize(base::readFileToBytes(path).data());
 
     ASSERT_TRUE(a.serialize().to_string() == b.serialize().to_string());
 }

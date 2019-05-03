@@ -17,7 +17,7 @@ namespace base {
     class FileWriter {
     public:
         FileWriter(FileWriter&& fw) noexcept: _ofs(std::move(fw._ofs)) {}
-        FileWriter(const std::string_view& name, bool noLog = false);
+        FileWriter(const std::string_view& name);
 
         template <SizeT _Size>
         auto& write(const ftl::Array<Byte, _Size>& array) {
@@ -72,7 +72,7 @@ namespace base {
         FileReader(FileReader&& fr) noexcept
             : _ifs(std::move(fr._ifs)), _size(fr._size) {}
 
-        FileReader(const std::string_view& name, bool noLog = false);
+        FileReader(const std::string_view& name);
 
         auto readAllToBytes() -> ftl::Vector<Byte>;
         auto readAllToString() -> ftl::String;
@@ -86,16 +86,16 @@ namespace base {
 
 
     template <SizeT _Size>
-    inline void writeBytesToFile(const std::string_view& path, const ftl::Array<Byte, _Size>& bytes, bool noLog = false) {
-        auto fw = FileWriter(path, noLog);
+    inline void writeBytesToFile(const ftl::String& path, const ftl::Array<Byte, _Size>& bytes) {
+        auto fw = FileWriter(path);
         fw.write(bytes);
     }
     
-    void writeBytesToFile(const std::filesystem::path& path, const Byte* bytes, SizeT size, bool noLog = false);
-    void writeBytesToFile(const std::filesystem::path& path, const ftl::Vector<Byte>& bytes, bool noLog = false);
+    void writeBytesToFile(const ftl::String& path, const Byte* bytes, SizeT size);
+    void writeBytesToFile(const ftl::String& path, const ftl::Vector<Byte>& bytes);
 
-    auto readFileToBytes  (const std::filesystem::path& path, bool noLog = false) -> ftl::Vector<Byte>;
-    auto readFileToString (const std::filesystem::path& path, bool noLog = false) -> ftl::String;
+    auto readFileToBytes  (const ftl::String& path) -> ftl::Vector<Byte>;
+    auto readFileToString (const ftl::String& path) -> ftl::String;
 
 } // namespace base
 

@@ -19,8 +19,9 @@ set(DECAY_EXECUTABLE
         src/base/time.cpp
         src/base/files.cpp
         src/base/files.hpp
-        src/base/ftl/string.cpp)
+        src/base/ftl/string.cpp
+        src/base/filesystem.cpp)
 add_subdirectory(src)
 
-add_executable(DecayEngine ${DECAY_EXECUTABLE})
-target_link_libraries(DecayEngine luajit-5.1 xxhash fmt -lstdc++fs)
+add_executable(DecayEngine ${DECAY_EXECUTABLE} src/base/filesystem.cpp)
+target_link_libraries(DecayEngine luajit-5.1 xxhash fmt)
