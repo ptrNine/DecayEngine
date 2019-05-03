@@ -53,6 +53,8 @@ namespace ftl {
         template <std::size_t _Size>
         StringBase(const CharT(&str)[_Size]) : _str_v(str, _Size ? _Size-1 : 0) {}
 
+        StringBase(const CharT* str, SizeT size) : _str_v(str, size) {}
+
         template <CharT... _Str>
         StringBase(ConstexprString<CharT, _Str...> str) : StringBase(str.str_view()) {}
 
@@ -439,6 +441,30 @@ namespace ftl {
             return *this;
         }
 
+
+        inline auto parent_path() const -> StringBase {
+            auto size = length();
+
+            auto p = crbegin();
+
+            if (p != crend() && *p == '/') {
+                ++p;
+                --size;
+            }
+
+            for (; p != crend() && *p != '/'; ++p)
+                --size;
+
+            if (p == crend())
+                return {};
+
+            return substr(0, size);
+        }
+
+    protected:
+
+
+    public:
         inline auto operator[](SizeType pos)       -> CharT&       { return _str_v[pos]; }
         inline auto operator[](SizeType pos) const -> const CharT& { return _str_v[pos]; }
 
