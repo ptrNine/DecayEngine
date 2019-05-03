@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-targets=(nuklear benchmark fmt xxhash libcuckoo skarupkeFHM gtest all)
+targets=(nuklear benchmark fmt xxhash libcuckoo skarupkeFHM gtest rapidxml luajit all)
 argument="${1}"
 
 function anyInstall {
@@ -70,6 +70,37 @@ function updateGTest {
     rm -rf googletest
 }
 
+function updateRapidXml {
+    git clone https://github.com/discordapp/rapidxml
+    mkdir -p include/rapidxml/
+    mkdir -p lib/
+	install -m 0644 rapidxml/rapidxml.hpp           include/rapidxml/
+	install -m 0644 rapidxml/rapidxml_iterators.hpp include/rapidxml/
+	install -m 0644 rapidxml/rapidxml_print.hpp     include/rapidxml/
+	install -m 0644 rapidxml/rapidxml_utils.hpp     include/rapidxml/
+	rm -rf rapidxml
+}
+
+function updateLuajit {
+	git clone https://github.com/LuaJIT/LuaJIT
+    pushd LuaJIT
+	git checkout v2.1.0-beta3
+	make
+    mkdir -p ../lib/
+    mkdir -p ../include/luajit-2.1/
+	install -m 0755 src/libluajit.so ../lib/libluajit-5.1.so
+	install -m 0755 src/libluajit.a ../lib/libluajit-5.1.a
+	install -m 0644 src/lauxlib.h ../include/luajit-2.1/
+	install -m 0644 src/lua.h ../include/luajit-2.1/
+	install -m 0644 src/lua.hpp ../include/luajit-2.1/
+	install -m 0644 src/luaconf.h ../include/luajit-2.1/
+	install -m 0644 src/luajit.h ../include/luajit-2.1/
+	install -m 0644 src/lualib.h ../include/luajit-2.1/
+	ln -s ../lib/libluajit-5.1.so ../lib/libluajit-5.1.so.2
+	popd
+	rm -rf LuaJIT
+}
+
 function showHelp {
     echo "Usage: ./make-deps.sh [TARGET]"
     echo "Targets:"
@@ -84,6 +115,8 @@ fmt)         updateFmt         ;;
 xxhash)      updateXxhash      ;;
 skarupkeFHM) updateSkarupkeFHM ;;
 gtest)       updateGTest       ;;
+rapidxml)    updateRapidXml    ;;
+luajit)      updateLuajit      ;;
 all)
     rm -rf include
     rm -rf lib
@@ -93,6 +126,8 @@ all)
     updateXxhash
     updateSkarupkeFHM
     updateGTest
+    updateRapidXml
+    updateLuajit
 ;;
 --help|-h)
     showHelp

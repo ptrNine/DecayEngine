@@ -441,29 +441,6 @@ namespace ftl {
             return *this;
         }
 
-
-        inline auto parent_path() const -> StringBase {
-            auto size = length();
-
-            auto p = crbegin();
-
-            if (p != crend() && *p == '/') {
-                ++p;
-                --size;
-            }
-
-            for (; p != crend() && *p != '/'; ++p)
-                --size;
-
-            if (p == crend())
-                return {};
-
-            return substr(0, size);
-        }
-
-    protected:
-
-
     public:
         inline auto operator[](SizeType pos)       -> CharT&       { return _str_v[pos]; }
         inline auto operator[](SizeType pos) const -> const CharT& { return _str_v[pos]; }
@@ -501,6 +478,26 @@ namespace ftl {
 
         auto splitView(std::initializer_list<CharT> l, bool createNullStrs = false) const -> Vector<StrView>;
         auto split    (std::initializer_list<CharT> l, bool createNullStrs = false) const -> Vector<StringBase<CharT>>;
+
+        
+        inline auto parent_path() const -> StringBase {
+            auto size = length();
+
+            auto p = crbegin();
+
+            if (p != crend() && *p == '/') {
+                ++p;
+                --size;
+            }
+
+            for (; p != crend() && *p != '/'; ++p)
+                --size;
+
+            if (p == crend())
+                return {};
+
+            return substr(0, size);
+        }
 
     protected:
         std::basic_string<CharT> _str_v;
