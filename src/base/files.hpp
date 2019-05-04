@@ -5,7 +5,6 @@
 #include <fstream>
 #include <mutex>
 #include <string_view>
-#include <filesystem>
 
 #include "concepts.hpp"
 #include "serialization.hpp"
