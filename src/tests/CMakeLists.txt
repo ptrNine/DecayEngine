@@ -20,4 +20,13 @@ add_executable(Tests
         ../base/logs.cpp
         ../base/filesystem.cpp)
 target_link_libraries(Tests Threads::Threads libgtest.a fmt xxhash)
+
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin)
+
+if (WIN32)
+    target_link_libraries(Tests lua51)
+else()
+    target_link_libraries(Tests luajit-5.1)
+endif()
+
 add_test(NAME Tests COMMAND Tests)
