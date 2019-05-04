@@ -157,9 +157,6 @@ namespace base {
         using StrView     = std::string_view;
         using StrViewCref = const std::string_view&;
         using StrViewPair = std::pair<StrView, StrView>;
-        using Path        = std::filesystem::path;
-        using PathRef     = Path&;
-        using PathCref    = const Path&;
 
     public:
         template <typename... Ts>
