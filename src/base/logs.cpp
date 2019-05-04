@@ -11,7 +11,7 @@ base::Logger::Logger()  {
     auto path = ftl::String(base::fs::current_path().parent_path()) /
             cfg::force_read_ie<ftl::String>("logs_dir", "force_log");
     auto name = ftl::String("log_");
-    name += timer().getSystemDateTime().to_string("DD_MM_YYYY__hh:mm:ss.log");
+    name += timer().getSystemDateTime().to_string("DD_MM_YYYY__hh_mm_ss.log");
     _fw.emplace(FileWriter(path / name));
 
     _fw->write("!!! LOG START   ")
