@@ -3,7 +3,11 @@
 
 #include <cstdint>
 
+#if __GNUC__ == 8 && (__GNUC_MINOR__ < 3) && __GNUC__ != 9
+enum Byte : uint8_t {};
+#else
 using Byte    = std::byte;
+#endif
 
 using U8      = std::uint8_t;
 using U16     = std::uint16_t;

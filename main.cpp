@@ -5,8 +5,6 @@
 #include "src/base/logs.hpp"
 
 int main() {
-    base::cfg::cfg();
-    base::cfg_detls::cfgData()._print_info();
     //base::Log("ъеъ");
     //UIBuilder builder("/mnt/sda6-drive/Repos/DecayEngine/testGamedata/ui/gui.xml");
     //builder.present(nullptr);
@@ -21,6 +19,7 @@ int main() {
     std::cout << kek << std::endl;
      */
 
+    std::cout << "adsad" << std::endl;
 
 
     return 0;

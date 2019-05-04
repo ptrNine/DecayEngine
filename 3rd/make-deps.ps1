@@ -97,7 +97,7 @@ function updateLuajit {
 	mingw32-make
     New-Item -ItemType directory -Force -Path ..\include\luajit-2.1
     New-Item -ItemType directory -Force -Path ..\lib\
-	Copy-Item -Force src\lua51.dll ..\lib\luajit-5.1.dll
+	Copy-Item -Force src\lua51.dll ..\lib\
 	Copy-Item -Force src\lauxlib.h ..\include\luajit-2.1\
 	Copy-Item -Force src\lua.h ..\include\luajit-2.1\
 	Copy-Item -Force src\lua.hpp ..\include\luajit-2.1\

@@ -23,5 +23,13 @@ set(DECAY_EXECUTABLE
         src/base/filesystem.cpp)
 add_subdirectory(src)
 
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin)
+
 add_executable(DecayEngine ${DECAY_EXECUTABLE} src/base/filesystem.cpp)
-target_link_libraries(DecayEngine luajit-5.1 xxhash fmt)
+target_link_libraries(DecayEngine xxhash fmt)
+
+if (WIN32)
+    target_link_libraries(DecayEngine lua51)
+else()
+    target_link_libraries(DecayEngine luajit-5.1)
+endif()
