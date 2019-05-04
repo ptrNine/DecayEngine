@@ -8,23 +8,22 @@ base::FileWriter::FileWriter(const std::string_view& name)  {
     auto path   = ftl::String(name);
     auto parent = path.parent_path();
 
-    std::error_code code;
-
     if (!parent.empty())
         fs::create_dir(parent);
 
-    _ofs.open(name.data(), std::ios_base::binary | std::ios_base::out);
+    _ofs.open(path.data(), std::ios_base::binary | std::ios_base::out);
 
     if (!_ofs.is_open())
-        RABORTF("Can't open file: \'{}\'", name);
+        RABORTF("Can't open file: \'{}\'", path);
 }
 
 
 base::FileReader::FileReader(const std::string_view& name) {
-    _ifs.open(name.data(), std::ios_base::binary | std::ios_base::in);
+    auto path = ftl::String(name);
+    _ifs.open(path.data(), std::ios_base::binary | std::ios_base::in);
 
     if (!_ifs.is_open())
-        RABORTF("Can't open file: \'{}\'", name);
+        RABORTF("Can't open file: \'{}\'", path);
 
     _ifs.seekg(0, std::ios_base::end);
     _size = static_cast<SizeT>(_ifs.tellg());
