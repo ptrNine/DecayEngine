@@ -233,7 +233,7 @@ auto base::ConfigManager::remove_space_bounds_if_exists(StrViewCref str) -> StrV
             return str.substr(start - str.cbegin(), last - start + 1);
     }
 
-    return {};
+    return str;
 }
 
 auto base::ConfigManager::remove_brackets_if_exists(StrViewCref str) -> StrView {
