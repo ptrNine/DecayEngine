@@ -30,7 +30,7 @@ namespace ftl {
             : Vector3(vec._x, vec._y, vec._z) {}
 
         constexpr Vector3(Vector3&& vec) noexcept
-            : _x(std::move(vec._x), std::move(vec._y), std::move(vec._z)) {}
+            : _x(std::move(vec._x)), _y(std::move(vec._y)), _z(std::move(vec._z)) {}
 
         constexpr Vector3(Type x, Type y, Type z) noexcept
             : _x(x), _y(y), _z(z) {}

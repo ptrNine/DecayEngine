@@ -31,7 +31,7 @@ namespace ftl {
             : Vector2(vec._x, vec._y) {}
 
         constexpr Vector2(Vector2&& vec) noexcept
-            : _x(std::move(vec._x), std::move(vec._y)) {}
+            : _x(std::move(vec._x)), _y(std::move(vec._y)) {}
 
         constexpr Vector2(Type x, Type y) noexcept : _x(x), _y(y) {}
 
@@ -338,6 +338,7 @@ struct fmt::formatter<ftl::Vector2Flt<Type>> {
         return format_to(ctx.out(), "{}", vec.to_string());
     }
 };
+
 
 #undef ICA // inline constexpr auto
 #undef ICA // inline auto
