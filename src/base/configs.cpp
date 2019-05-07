@@ -168,13 +168,13 @@ inline bool is_bracket(Char8 c) {
 }
 
 inline bool is_legal_name_symbol(Char8 c) {
-    return c == '@' || c == '.' || c =='/' || c == '\\';
+    return c == '@' || c == '.' || c =='/' || c == '\\' || c == '-';
 }
 
 inline bool is_symbol(Char8 c) {
     return c == ',' || c == ';' || c == '#' || c == '[' || c == ']' ||
-           c == '-' || c == '+' || c == '=' || c == '$' || c == '{' ||
-           c == '}' || c == ':' || is_legal_name_symbol(c) || is_bracket(c);
+           c == '+' || c == '=' || c == '$' || c == '{' || c == '}' ||
+           c == ':' || is_legal_name_symbol(c) || is_bracket(c);
 }
 
 inline bool validate_name_symbol(Char8 c) {
