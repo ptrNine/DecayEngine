@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 project(DecayEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 
 set(3RD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/3rd/include)
-set(3RD_LIB_DIR ${CMAKE_SOURCE_DIR}/3rd/lib)
+set(3RD_LIB_DIR     ${CMAKE_SOURCE_DIR}/3rd/lib)
 
 include_directories(${3RD_INCLUDE_DIR})
 link_directories(DecayEngine ${3RD_LIB_DIR})
@@ -21,12 +21,20 @@ set(DECAY_EXECUTABLE
         src/base/files.hpp
         src/base/ftl/string.cpp
         src/base/filesystem.cpp)
-add_subdirectory(src)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin)
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/../bin)
+
+add_subdirectory(src)
 
 add_executable(DecayEngine ${DECAY_EXECUTABLE} src/base/filesystem.cpp)
-target_link_libraries(DecayEngine xxhash fmt)
+link_directories(DecayEngine ${CMAKE_BINARY_DIR}/../bin)
+
+target_link_libraries(DecayEngine xxhash fmt DeGraphics DeInput)
+target_include_directories(DecayEngine
+        PRIVATE src/base
+        PRIVATE src/graphics
+        PRIVATE src/input)
 
 if (WIN32)
     target_link_libraries(DecayEngine lua51)

@@ -321,8 +321,8 @@ namespace base {
         // String :)
         template <typename T>
         SIA superCast(StrViewCref str, StrViewCref, StrViewCref)
-        -> std::enable_if_t<concepts::any_of<T, ftl::String, std::string_view>, T> {
-            return str;
+        -> std::enable_if_t<concepts::any_of<T, ftl::String, std::string_view, std::string>, T> {
+            return T(str);
         }
 
         template <typename T>

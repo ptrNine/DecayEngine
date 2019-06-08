@@ -22,6 +22,10 @@ void base::fs::create_dir(const std::string_view& path) {
     recursiveMakeDir(path);
 }
 
+auto base::fs::to_data_path(const std::string_view& path) -> ftl::String {
+    return current_path().parent_path() / path;
+}
+
 
 
 //////////////////////////// UNIX

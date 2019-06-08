@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-targets=(nuklear benchmark fmt xxhash libcuckoo skarupkeFHM gtest rapidxml luajit all)
+targets=(nuklear benchmark fmt xxhash libcuckoo skarupkeFHM gtest rapidxml luajit assimp gainput glfx glm il all)
 argument="${1}"
 
 function anyInstall {
-    make install -C BUILD DESTDIR=../INSTALL
+    make install -C BUILD DESTDIR=../INSTALLDIR
     mkdir -p ../include/
-    cp -rf INSTALL/usr/local/include/* ../include/
+    cp -rf INSTALLDIR/usr/local/include/* ../include/
     mkdir -p ../lib/
-    cp -rf INSTALL/usr/local/lib*/* ../lib/
+    cp -rf INSTALLDIR/usr/local/lib*/* ../lib/
     popd
 }
 
@@ -101,6 +101,56 @@ function updateLuajit {
 	rm -rf LuaJIT
 }
 
+function updateAssimp {
+    git clone https://github.com/assimp/assimp
+    pushd assimp
+    git checkout v.5.0.0.rc1
+    cmake . -BBUILD -DCMAKE_BUILD_TYPE=Release
+    make -j2 -C BUILD
+    anyInstall
+    rm -rf assimp
+}
+
+function updateGainput {
+    git clone https://github.com/jkuhlmann/gainput
+    pushd gainput
+    git checkout v1.0.0
+    cmake . -BBUILD -DCMAKE_BUILD_TYPE=Release
+    make -j2 -C BUILD
+    anyInstall
+    rm -rf gainput
+}
+
+function updateGlfx {
+    git clone https://github.com/maizensh/glfx
+    pushd glfx
+    cmake . -BBUILD -DCMAKE_BUILD_TYPE=Release
+    make -j2 -C BUILD
+    anyInstall
+    rm -rf glfx
+}
+
+function updateGlm {
+    git clone https://github.com/g-truc/glm
+    pushd glm
+    git checkout 0.9.9.5
+    cmake . -BBUILD -DCMAKE_BUILD_TYPE=Release
+    make -j2 -C BUILD
+    anyInstall
+    rm -rf glm
+}
+
+function updateIl {
+    git clone https://github.com/DentonW/DevIL
+    pushd DevIL
+    git checkout v1.8.0
+    cmake DevIL -BBUILD -DCMAKE_BUILD_TYPE=Release
+    make -j2 -C BUILD
+    anyInstall
+    rm -rf DevIL
+}
+
+
 function showHelp {
     echo "Usage: ./make-deps.sh [TARGET]"
     echo "Targets:"
@@ -117,6 +167,11 @@ skarupkeFHM) updateSkarupkeFHM ;;
 gtest)       updateGTest       ;;
 rapidxml)    updateRapidXml    ;;
 luajit)      updateLuajit      ;;
+assimp)      updateAssimp      ;;
+gainput)     updateGainput     ;;
+glfx)        updateGlfx        ;;
+glm)         updateGlm         ;;
+il)          updateIl          ;;
 all)
     rm -rf include
     rm -rf lib
@@ -128,6 +183,11 @@ all)
     updateGTest
     updateRapidXml
     updateLuajit
+    updateAssimp
+    updateGainput
+    updateGlfx
+    updateGlm
+    updateIl
 ;;
 --help|-h)
     showHelp
