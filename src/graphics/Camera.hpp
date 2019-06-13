@@ -15,6 +15,7 @@ namespace grx {
      * Supports basic camera functions and input from camera manipulators
      */
     class Camera {
+    public:
         enum FrustumPlaneTypes {
             FrustumPlaneLeft = 0,
             FrustumPlaneRight,
@@ -26,6 +27,7 @@ namespace grx {
         };
         using FrustumT = std::array<glm::vec4, FrustumPlaneCount>;
         using VP_T     = std::pair<glm::mat4, glm::mat4>;
+
     public:
         explicit Camera(
                 const glm::vec3 &pos = {0.f, 0.f, -2.f},

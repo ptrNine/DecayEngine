@@ -2,17 +2,13 @@
 #include "../base/allocators/AlignedAllocator.hpp"
 #include <benchmark/benchmark.h>
 
-
 //#define TEST_OUTPUT
 
 #ifdef TEST_OUTPUT
-std::size_t aabbs_count = 64;
+std::size_t aabbs_count = 297;
 #else
-std::size_t aabbs_count = 100000;
+std::size_t aabbs_count = 100337;
 #endif
-
-
-
 
 #include <array>
 #include <vector>
@@ -323,7 +319,7 @@ static void BM_sse_frustumAABB_multithread(benchmark::State& state) {
 #endif
 
 }
-BENCHMARK(BM_sse_frustumAABB_multithread);
+//BENCHMARK(BM_sse_frustumAABB_multithread);
 
 
 void avx_multithread_frustum(int32_t* results, float* aabbs, float* frustum, std::size_t count) {
@@ -385,6 +381,57 @@ static void BM_avx_multithread_AABBfrustum(benchmark::State& state) {
 #endif
 
 }
-BENCHMARK(BM_avx_multithread_AABBfrustum);
+//BENCHMARK(BM_avx_multithread_AABBfrustum);
+
+#include "../graphics/algorithms/FrustumCulling.hpp"
+
+static void BM_DE_culling(benchmark::State& state) {
+    auto aabbs_vec = generateAABBs(vec3(0, 0, 0), vec3(10, 10, 10), vec3(-100, -100, -100), vec3(100, 100, 100),
+                               aabbs_count);
+    auto frustum_arr = generateFrustum();
+
+    grx::frustum_storage().clear();
+    frst_st::FrustumStorage::FrustumT frustum;
+
+    for (int i = 0; i < 6; ++i) {
+        frustum[i].x = frustum_arr[i].x;
+        frustum[i].y = frustum_arr[i].y;
+        frustum[i].z = frustum_arr[i].z;
+        frustum[i].w = frustum_arr[i].w;
+    }
+
+    std::vector<grx::CullingDataProvider> aabbs;
+    aabbs.reserve(aabbs_vec.size());
+
+    for (auto& aabb : aabbs_vec)
+        aabbs.emplace_back(
+                glm::vec4(aabb.first.x,  aabb.first.y,  aabb.first.z,  aabb.first.w),
+                glm::vec4(aabb.second.x, aabb.second.y, aabb.second.z, aabb.second.w));
+
+    for (auto _ : state)
+        grx::frustum_storage().calculateCulling(frustum);
+
+#ifdef TEST_OUTPUT
+    auto res2 = CullResultV(aabbs_count);
+
+    for (auto _ : state)
+        for (std::size_t i = 0; i < aabbs_count; ++i)
+            res2[i] = frustum_test(aabbs_vec[i], frustum_arr);
+
+
+    std::cout << "DE CULL  : ";
+    for (auto r : aabbs)
+        std::cout << ((r.result() != 0) ? "in " : "out") << " ";
+    std::cout << std::endl;
+
+    std::cout << "PLAIN C++: ";
+    for (auto r : res2)
+        std::cout << ((r != 0) ? "in " : "out") << " ";
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+#endif
+}
+BENCHMARK(BM_DE_culling);
 
 BENCHMARK_MAIN();
