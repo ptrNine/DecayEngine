@@ -2,7 +2,7 @@
 
 #include "../base/ftl/ring.hpp"
 
-TEST(RingTests, REDUCE) {
+TEST(RingTests, Reduce) {
     // Reduce with string return type
     auto str1 = ftl::Ring{9,8,7,6,4}.reduce(
             [](const std::string& s, int n) {
@@ -130,7 +130,7 @@ TEST(RingTests, REDUCE) {
     ASSERT_STREQ("012345", itest2.c_str());
 }
 
-TEST(RingTests, MAP) {
+TEST(RingTests, Map) {
     auto vec1 = ftl::Ring{4,5,2,75,3}.map([](int a) { return a + 1; }).to_string();
     ASSERT_STREQ(vec1.c_str(), "{ 5, 6, 3, 76, 4 }");
 
@@ -144,7 +144,7 @@ TEST(RingTests, MAP) {
     ASSERT_STREQ(vec2i.c_str(), "{ 40, 51, 22, 753, 34 }");
 }
 
-TEST(RingTests, FILTER) {
+TEST(RingTests, Filter) {
     auto vec1 = ftl::Ring{4,5,2,75,3}.filter([](int a) { return a >= 5; }).to_string();
     ASSERT_STREQ(vec1.c_str(), "{ 5, 75 }");
 
@@ -155,10 +155,77 @@ TEST(RingTests, FILTER) {
     ASSERT_STREQ(vec2.c_str(), "{}");
 }
 
-TEST(RingTests, FILTER_MAP_REDUCE) {
+TEST(RingTests, FilterMapReduce) {
     ftl::Ring v{1, 2, 3, 4, 4, 3, 2, 1};
     auto a = v.filter([](int i) { return i > 2; })
             .map   ([](int i) { return i*1.5; })
             .reduce([](double l, double r) { return l + r; });
     ASSERT_EQ(a, 21);
+}
+
+#include <random>
+
+TEST(RingTests, BasicTests) {
+    auto str1 = ftl::Ring<int>(5).to_string();
+    ASSERT_STREQ(str1.c_str(), "{ 0, 0, 0, 0, 0 }");
+
+    auto str2 = ftl::Ring<int>().to_string();
+    ASSERT_STREQ(str2.c_str(), "{}");
+
+
+    // Random push test
+    auto randgen = std::bind(std::uniform_int_distribution<int>(-500, 500), std::mt19937());
+    auto deque   = std::deque<int>();
+    auto ring    = ftl::Ring <int>();
+
+    repeat(10000) {
+        int genval = randgen();
+        if (genval % 2) {
+            deque.push_back(genval);
+            ring .push_back(genval);
+        } else {
+            deque.push_front(genval);
+            ring .push_front(genval);
+        }
+    }
+
+    std::stringstream ss;
+    ftl::_iter_print(deque.begin(), deque.end(), deque.size(), ss);
+    ASSERT_STREQ(ss.str().c_str(), ring.to_string().c_str());
+
+
+    // Iter test
+    deque.clear();
+    ring .clear();
+
+    repeat(1001) {
+        int genval = randgen();
+        if (genval % 2) {
+            deque.push_back(genval);
+            ring .push_back(genval);
+        } else {
+            deque.push_front(genval);
+            ring .push_front(genval);
+        }
+
+        ASSERT_EQ(true, std::equal(deque.cbegin(), deque.cend(), ring.cbegin()));
+        ASSERT_EQ(true, std::equal(deque.crbegin(), deque.crend(), ring.crbegin()));
+    }
+
+    // Random access test
+    repeat(100000) {
+        int genval = randgen() + 500;
+        ASSERT(genval >= 0 && genval < 1001);
+        ASSERT_EQ(deque[genval], ring[genval]);
+    }
+
+
+    // Resize tests
+    deque.resize(50);
+    ring .resize(50);
+    ASSERT_EQ(1, std::equal(deque.cbegin(), deque.cend(), ring.cbegin()));
+
+    deque.resize(100, 228);
+    ring .resize(100, 228);
+    ASSERT_EQ(1, std::equal(deque.cbegin(), deque.cend(), ring.cbegin()));
 }

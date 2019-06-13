@@ -329,24 +329,6 @@ namespace ftl {
 
         friend std::ostream& operator<< (std::ostream& os, const Vector& vector) { vector.print(os); return os; }
 
-
-    private:
-        template<typename InpIter, typename RetType, typename Function, SizeT _StartI = 0>
-        auto _iter_reduce(InpIter first, InpIter last, RetType init, Function callback) const ->
-        std::enable_if_t<ftl::function_traits<Function>::arity == 2, typename ftl::function_traits<Function>::return_type> {
-            for (; first != last; ++first)
-                init = callback(init, *first);
-            return init;
-        }
-
-        template<typename InpIter, typename RetType, typename Function, SizeT _StartI = 0>
-        auto _iter_reduce(InpIter first, InpIter last, RetType init, Function callback) const ->
-        std::enable_if_t<ftl::function_traits<Function>::arity == 3, typename ftl::function_traits<Function>::return_type> {
-            for (SizeT i = _StartI; first != last; ++first)
-                init = callback(init, *first, i++);
-            return init;
-        }
-
     protected:
         std::vector<Type> _stl_vector;
     };

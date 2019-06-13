@@ -14,13 +14,16 @@ namespace ftl {
         struct Storage {
             using PtrT = T*;
 
-            PtrT distanceGet(SizeT pos) {
+            bool isFragmented() const { return p_start >= p_end; }
+
+            PtrT distanceGet(SizeT pos) const noexcept {
                 auto diff = mem_end - p_start;
 
-                if (p_start >= p_end && diff < pos)
+                if (isFragmented() && diff <= pos) {
                     pos -= diff;
-
-                return mem + pos;
+                    return mem + pos;
+                } else
+                    return p_start + pos;
             }
 
             SizeT size = 0;
@@ -41,6 +44,7 @@ namespace ftl {
             }
             RawIterBase(const Storage<RCT>* s, const PtrT p): _s(s), _cur(p) {}
 
+            PtrT raw_ptr() const { return _cur; }
 
             auto& operator*()       { return *_cur; }
             auto& operator*() const { return *_cur; }
@@ -49,12 +53,12 @@ namespace ftl {
         protected:
             void increment() {
                 ++_cur;
-                if (_s->p_start >= _s->p_end && _cur == _s->mem_end)
+                if (_s->isFragmented() && _cur == _s->mem_end)
                     _cur = _s->mem;
             }
             void decrement() {
                 --_cur;
-                if (_s->p_start >= _s->p_end && _cur < _s->mem)
+                if (_s->isFragmented() && _cur < _s->mem)
                     _cur = _s->mem_end - 1;
             }
 
@@ -63,7 +67,7 @@ namespace ftl {
                     decrement(-val);
 
                 _cur += val;
-                if (_s->p_start >= _s->p_end && _cur >= _s->mem_end)
+                if (_s->isFragmented() && _cur >= _s->mem_end)
                     _cur = _s->mem + (_cur - _s->mem_end);
             }
             void decrement(ptrdiff_t val) {
@@ -71,7 +75,7 @@ namespace ftl {
                     increment(-val);
 
                 _cur -= val;
-                if (_s->p_start >= _s->p_end && _cur < _s->mem)
+                if (_s->isFragmented() && _cur < _s->mem)
                     _cur = _s->mem_end - 1 - (_s->mem - _cur);
             }
 
@@ -216,6 +220,10 @@ namespace ftl {
             _allocator.deallocate(_s.mem, 0);
         }
 
+
+        auto max_size() const noexcept -> SizeT { return _allocator.max_size(); }
+
+        // Iterators
         auto begin  ()       -> IterT   { return  IterT(&_s, _s.p_start); }
         auto end    ()       -> IterT   { return  IterT(&_s, _s.p_end  ); }
         auto begin  () const -> CIterT  { return CIterT(&_s, _s.p_start); }
@@ -266,7 +274,6 @@ namespace ftl {
 
         auto swap(Ring& ring) noexcept -> Ring& {
             std::swap(_s,ring._s);
-            std::swap(_allocator, ring._allocator);
             return *this;
         }
 
@@ -283,7 +290,7 @@ namespace ftl {
                 } else {
                     auto newblock = _allocator.allocate(size);
 
-                    if (_s.p_start >= _s.p_end) {
+                    if (_s.isFragmented()) {
                         auto displ = (_s.mem_end - _s.p_start);
                         std::memcpy(newblock, _s.p_start, displ * sizeof(Type));
                         std::memcpy(newblock + displ, _s.mem, (_s.size - displ) * sizeof(Type));
@@ -301,6 +308,30 @@ namespace ftl {
             }
             return *this;
         }
+
+        auto resize(SizeT new_size, const Type& fill_value = Type()) -> Ring& {
+            auto old_size = size();
+            if (new_size > old_size) {
+                reserve(new_size);
+
+                IterT last = end() + new_size;
+                for (auto i = begin() + old_size; i != last; ++i)
+                    new(i.raw_ptr()) Type(fill_value);
+            }
+            else if (new_size < old_size) {
+                auto last = begin() + new_size;
+
+                for (auto i = last; i != end(); ++i)
+                    i->~Type();
+
+                _s.p_end = last.raw_ptr();
+                _s.size  = new_size;
+            }
+            return *this;
+        }
+
+        auto at(SizeT position)       -> RefType  { return *_s.distanceGet(position); }
+        auto at(SizeT position) const -> CrefType { return *_s.distanceGet(position); }
 
         auto push_back(const Type& value) -> Ring& {
             // Realloc if size == max - 1, because of iterator invalidation (begin == end)
@@ -480,21 +511,21 @@ namespace ftl {
             ftl::_iter_print(cbegin(), cend(), size(), os);
         }
 
-        void print_info() {
-            for (int i = 0; i < _s.max + 1; ++i) {
-                if (_s.mem + i == _s.p_start && _s.p_start == _s.p_end)
-                    std::cerr << "&";
-                else if (_s.mem + i == _s.p_start)
-                    std::cerr << "S";
-                else if (_s.mem + i == _s.p_end)
-                    std::cerr << "E";
-                else
-                    std::cerr << "_";
-            }
-            std::cerr << std::endl;
+        // Operators
+        friend std::ostream& operator<< (std::ostream& os, const Ring& ring) { ring.print(os); return os; }
+
+        auto operator[] (SizeT position) noexcept -> RefType {
+            ASSERT(position < size());
+            return *_s.distanceGet(position);
+        }
+        auto operator[] (SizeT position) const noexcept -> CrefType {
+            ASSERT(position < size());
+            return *_s.distanceGet[position];
         }
 
-        friend std::ostream& operator<< (std::ostream& os, const Ring& ring) { ring.print(os); return os; }
+        bool operator== (const Ring& r) const {
+            return std::equal(r.cbegin(), r.cend(), cbegin());
+        }
 
     private:
         void _incrementStart() {
