@@ -112,9 +112,9 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
         if (diffuseCount > 0) {
             auto path = aiString();
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
-                textures.emplace_back(grx::texture_manager().load(path.data));
+                textures.emplace_back(path.data);
             else
-                textures.emplace_back(NULL);
+                textures.emplace_back();
         } else {
             // Todo: set dummy texture
         }
@@ -299,9 +299,9 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     for (auto& me : mesh_entries) {
         auto materialIndex = me._material_index;
 
-        if (materialIndex < textures.size() && textures[materialIndex]) {
+        if (materialIndex < textures.size() && textures[materialIndex].valid()) {
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[materialIndex]);
+            textures[materialIndex].bind();
         }
 
         glDrawElementsBaseVertex(
@@ -400,9 +400,9 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     for (auto& me : mesh_entries) {
         auto materialIndex = me._material_index;
 
-        if (materialIndex < textures.size() && textures[materialIndex]) {
+        if (materialIndex < textures.size() && textures[materialIndex].valid()) {
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[materialIndex]);
+            textures[materialIndex].bind();
         }
 
         glDrawElementsInstancedBaseVertex(

@@ -7,10 +7,12 @@
 #include <cstring>
 #include <iostream>
 
+#include "configs.hpp"
+#include "logs.hpp"
 
-#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
-#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
-#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+//#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
+//#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
+//#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
 
 std::string ilGetErrorString() {
     switch (ilGetError()) {
@@ -36,9 +38,10 @@ std::string ilGetErrorString() {
     }
 }
 
-std::string harcoded_path = "/mnt/sda6-drive/Repos/OpenGlTestFramework/models/cz805/";
 
-unsigned grx_txtr::TextureManager::loadIL(const std::string_view& path) {
+unsigned grx_txtr::TextureManager::loadIL(const std::string& path) {
+    auto realPath = base::fs::to_data_path(base::cfg::read<ftl::String>("textures_dir") / path);
+
     auto imgID = ilGenImage();
     GLuint texId = 0; glGenTextures(1, &texId);
 
@@ -46,10 +49,10 @@ unsigned grx_txtr::TextureManager::loadIL(const std::string_view& path) {
     ilEnable(IL_ORIGIN_SET);
     ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
 
-    auto rc = ilLoadImage((harcoded_path + path.data()).c_str());
+    auto rc = ilLoadImage(realPath.c_str());
 
     if (!rc) {
-        std::cerr << "Can't load texture '" << path << "'! IL error code: " << ilGetErrorString() << std::endl;
+        base::Log("Can't load texture '{}'. IL error: {}", realPath, ilGetErrorString());
         ilDeleteImage(imgID);
         glDeleteTextures(1, &texId);
         return 0;
@@ -68,11 +71,9 @@ unsigned grx_txtr::TextureManager::loadIL(const std::string_view& path) {
         ilDeleteImage(imgID);\
         return texId;
     }
-
-
-
 }
 
+/*
 unsigned grx_txtr::TextureManager::loadDDS(const std::string_view& path) {
     std::ifstream img(path.data(), std::ios::in | std::ios::ate);
 
@@ -158,56 +159,51 @@ unsigned grx_txtr::TextureManager::loadDDS(const std::string_view& path) {
     glBindTexture(GL_TEXTURE_2D, 0);
     return id;
 }
+ */
 
-unsigned grx_txtr::TextureManager::loadTexture(const std::string_view& path) {
-    // Todo: add dummy texture if path is invalid
-
-    auto format = path.size() > 3 ? path.substr(path.length() - 3, 3) : "";
-
-    // Todo: case insensitive
-    if (format == "dds") {
-        return loadDDS(path);
-    } else {
-        return loadIL(path);
-    }
+unsigned grx_txtr::TextureManager::loadTexture(const std::string& path) {
+    return loadIL(path);
 }
-
 
 grx_txtr::TextureManager:: TextureManager() {
     ilInit();
 }
 
-grx_txtr::TextureManager::~TextureManager() {}
-
-unsigned grx_txtr::TextureManager::load(const char* path) {
-    auto lock = std::lock_guard{load_mutex};
-
-    auto find = textures.find(path);
-
-    if (find != textures.end())
-        return find->second;
-    else {
-        return textures[path] = loadTexture(path);
-    }
+grx_txtr::TextureManager::~TextureManager() {
+    for (auto& t : textures)
+        glDeleteTextures(1, &(t.second.id));
 }
 
-
-unsigned grx_txtr::TextureManager::pushTexture(ska::flat_hash_map<std::string, unsigned>* map, const char* path) {
-    return (*map)[path] = loadTexture(path);
-}
-
-auto grx_txtr::TextureManager::asyncLoad(const char* path) -> std::future<unsigned> {
-    auto lock = std::lock_guard{load_mutex};
-
-    auto promise = std::promise<unsigned>();
-
+unsigned grx_txtr::TextureManager::load(const std::string& path) {
     auto find = textures.find(path);
 
     if (find != textures.end()) {
-        promise.set_value(find->second);
-        return promise.get_future();
-    } else {
-        promise.set_value(pushTexture(&textures, path));
-        return promise.get_future();
+        find->second.count++;
+        return find->second.id;
     }
+    else {
+        auto id = loadTexture(path);
+
+        if (id)
+            textures[path].id = id;
+
+        return id;
+    }
+}
+
+void grx_txtr::TextureManager::destroy(const std::string& path) {
+    auto find = textures.find(path);
+
+    if (find != textures.end()) {
+        if (find->second.count > 1)
+            find->second.count--;
+        else {
+            glDeleteTextures(1, &find->second.id);
+            textures.erase(path);
+        }
+    }
+}
+
+void grx::Texture::bind() {
+    glBindTexture(GL_TEXTURE_2D, glID);
 }

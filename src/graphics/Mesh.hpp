@@ -7,6 +7,7 @@
 #include <assimp/vector3.h>
 #include <assimp/matrix4x4.h>
 #include "ShaderManager.hpp"
+#include "TextureManager.hpp"
 
 class aiScene;
 class aiMesh;
@@ -120,7 +121,7 @@ namespace grx {
         void initMesh(const aiMesh* mesh, UnpackedVertexVector& vertices, std::vector<unsigned>& indices);
 
         std::vector<MeshEntry> mesh_entries;
-        std::vector<unsigned>  textures;
+        std::vector<grx::Texture>  textures;
         std::array <unsigned, 6> _glBuffers;
         glm::vec3 _aa = {0.f, 0.f, 0.f};
         glm::vec3 _bb = {0.f, 0.f, 0.f};
