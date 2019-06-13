@@ -43,7 +43,7 @@ set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/../bin)
 
 add_subdirectory(src)
 
-add_executable(DecayEngine ${DECAY_EXECUTABLE} src/base/filesystem.cpp)
+add_executable(DecayEngine ${DECAY_EXECUTABLE})
 link_directories(DecayEngine ${CMAKE_BINARY_DIR}/../bin)
 
 target_link_libraries(DecayEngine xxhash fmt DeGraphics DeInput)

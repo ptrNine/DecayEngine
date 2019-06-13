@@ -10,17 +10,11 @@ add_executable(Tests
         stringTests.cpp
         mathVectorTests.cpp
         formatTest.cpp
-        ../base/time.cpp
         FileTests.cpp
-        ../base/files.cpp
         serializeTests.cpp
-        ../base/ftl/string.cpp
         ConfigTests.cpp
-        ../base/configs.cpp
-        ../base/logs.cpp
-        ../base/filesystem.cpp
         RingTests.cpp)
-target_link_libraries(Tests Threads::Threads libgtest.a fmt xxhash)
+target_link_libraries(Tests Threads::Threads libgtest.a DeBase)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin)
 

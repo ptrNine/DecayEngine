@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#if __GNUC__ == 8 && (__GNUC_MINOR__ < 3) && __GNUC__ != 9
+#if __GNUC__ == 8 && (__GNUC_MINOR__ < 3) && __GNUC__ != 9 || defined(__clang__)
 enum Byte : uint8_t {};
 #else
 using Byte    = std::byte;

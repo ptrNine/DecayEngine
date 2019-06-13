@@ -29,8 +29,8 @@ set(GraphicHeaders
 add_library(DeGraphics       SHARED ${GraphicSources})
 add_library(DeGraphicsStatic STATIC ${GraphicSources})
 
-target_link_libraries(DeGraphics       GL IL GLEW glfw glfx assimp -pthread)
-target_link_libraries(DeGraphicsStatic GL IL GLEW glfw glfx assimp -pthread)
+target_link_libraries(DeGraphics       GL IL GLEW glfw glfx assimp -pthread DeBase DeInput)
+target_link_libraries(DeGraphicsStatic GL IL GLEW glfw glfx assimp -pthread DeBase DeInput)
 
 target_include_directories(DeGraphics PRIVATE ../base)
 target_include_directories(DeGraphics PRIVATE ../input)
