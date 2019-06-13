@@ -18,7 +18,8 @@ add_executable(Tests
         ConfigTests.cpp
         ../base/configs.cpp
         ../base/logs.cpp
-        ../base/filesystem.cpp)
+        ../base/filesystem.cpp
+        RingTests.cpp)
 target_link_libraries(Tests Threads::Threads libgtest.a fmt xxhash)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/../bin)

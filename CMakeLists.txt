@@ -4,6 +4,22 @@ project(DecayEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 
+
+
+# NASM init
+enable_language(ASM_NASM)
+
+set(BUILD_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+message("Architecture: ${BUILD_ARCH}")
+
+if (BUILD_ARCH STREQUAL "x86_64")
+    set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -f elf64")
+else()
+    message(FATAL_ERROR "Unknown architecture ${BUILD_ARCH}. (Implement me?!)")
+endif()
+
+
+
 set(3RD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/3rd/include)
 set(3RD_LIB_DIR     ${CMAKE_SOURCE_DIR}/3rd/lib)
 

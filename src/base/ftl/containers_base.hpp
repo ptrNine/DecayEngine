@@ -1,6 +1,8 @@
 #ifndef DECAYENGINE_CONTAINERS_BASE_HPP
 #define DECAYENGINE_CONTAINERS_BASE_HPP
 
+#include <iostream>
+
 #include <fmt/format.h>
 extern "C" {
 #include <xxhash.h>
@@ -85,6 +87,19 @@ namespace ftl {
                 init = callback(init, *first, i++);
         }
         return init;
+    }
+
+    template <typename CIterT>
+    void _iter_print(CIterT cbegin, CIterT cend, SizeT size, std::ostream& os = std::cout) {
+        switch (size) {
+            case 0: os << "{}"; return;
+            case 1: os << "{ " << *cbegin << " }"; return;
+            default:
+                os << "{ " << *cbegin++;
+                for (; cbegin != cend; ++cbegin)
+                    os << ", " << *cbegin;
+                os << " }";
+        }
     }
 }
 

@@ -72,6 +72,10 @@ namespace base {
                 _freeLast = &_freeBlocks[0];
         }
 
+        bool empty() {
+            return _allocated_blocks == 0;
+        }
+
     private:
         SizeT _allocated_blocks = 0;
         SizeT _size = 0;

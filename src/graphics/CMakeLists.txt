@@ -7,6 +7,9 @@ set(GraphicSources
         ShaderManager.cpp
         TextureManager.cpp
         Window.cpp
+        algorithms/FrustumCulling.cpp
+        algorithms/asm/x86_64sv_sse_frustum_culling.asm
+        algorithms/asm/x86_64sv_avx_frustum_culling.asm
 )
 
 set(GraphicHeaders
@@ -19,6 +22,8 @@ set(GraphicHeaders
         ShaderManager.hpp
         TextureManager.hpp
         Window.hpp
+        algorithms/FrustumCulling.hpp
+        algorithms/frustum_culling_asm.hpp
 )
 
 add_library(DeGraphics       SHARED ${GraphicSources})

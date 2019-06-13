@@ -109,13 +109,13 @@ namespace ftl {
         }
 
         template<typename... Arguments>
-        decltype(auto) emplace_back(Arguments&&... args) {
-            return _stl_vector.emplace_back(std::forward<Arguments&&>(args)...);
+        auto emplace_back(Arguments&&... args) {
+            return _stl_vector.emplace_back(args...);
         }
 
         template<typename... Arguments>
         auto emplace(const_iterator position, Arguments&&... args) -> iterator {
-            return _stl_vector.emplace(std::forward<Arguments&&>(args)...);
+            return _stl_vector.emplace(args...);
         }
 
         auto insert(const_iterator position, const Type& value) -> iterator {
@@ -289,15 +289,7 @@ namespace ftl {
         }
 
         void print(std::ostream& os = std::cout) const {
-            switch (size()) {
-                case 0: os << "{}"; return;
-                case 1: os << "{ " << front() << " }"; return;
-                default:
-                    os << "{ " << front();
-                    for (auto it = cbegin() + 1; it != cend(); ++it)
-                        os << ", " << *it;
-                    os << " }";
-            }
+            ftl::_iter_print(cbegin(), cend(), size(), os);
         }
 
         U64 hash() const { return XXH64(_stl_vector.data(), _stl_vector.size() * sizeof(Type), 0); }

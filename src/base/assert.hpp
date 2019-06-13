@@ -7,8 +7,8 @@
 #include "logs.hpp"
 
 
-#define RASSERT(EXPR) details::assert_impl((EXPR), __FILE__, __FUNCTION__, __LINE__, #EXPR)
-#define RASSERTF(EXPR, FMT, ...) details::assert_impl((EXPR), __FILE__, __FUNCTION__, __LINE__, #EXPR, FMT, __VA_ARGS__)
+#define RASSERT(EXPR) ::details::assert_impl((EXPR), __FILE__, __FUNCTION__, __LINE__, #EXPR)
+#define RASSERTF(EXPR, FMT, ...) ::details::assert_impl((EXPR), __FILE__, __FUNCTION__, __LINE__, #EXPR, FMT, __VA_ARGS__)
 
 #define RABORT() RASSERT(false)
 #define RABORTF(FMT, ...) RASSERTF(false, FMT, __VA_ARGS__)
