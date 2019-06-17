@@ -25,7 +25,7 @@ grx::Mesh::Mesh(const char* filepath) {
 
     auto importer = Assimp::Importer();
 
-    auto scene = importer.ReadFile(realPath.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals);
+    auto scene = importer.ReadFile(realPath.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 
     // Todo: assert
     if (!scene)
@@ -39,12 +39,14 @@ grx::Mesh::Mesh(const char* filepath) {
 void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     mesh_entries.reserve(scene->mNumMeshes);
 
-    UnpackedVertexVector   vertices;
-    auto& positions = std::get<Vertex::POSITION>(vertices);
-    auto& uvs       = std::get<Vertex::UV      >(vertices);
-    auto& normals   = std::get<Vertex::NORMAL  >(vertices);
+    UnpackedVertexVector vertices;
+    auto &positions = std::get<Vertex::POSITION>(vertices);
+    auto &uvs = std::get<Vertex::UV>(vertices);
+    auto &normals = std::get<Vertex::NORMAL>(vertices);
+    auto &tangents = std::get<Vertex::TANGENT>(vertices);
+    auto &bitangents = std::get<Vertex::BITANGENT>(vertices);
 
-    std::vector<unsigned>  indices;
+    std::vector<unsigned> indices;
 
     std::cout << "Load mesh data '" << filepath << "'..." << std::endl;
     std::cout << "Has meshes:     " << (scene->HasMeshes() ? "true" : "false") << std::endl;
@@ -63,19 +65,21 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     std::cout << "Cameras count     " << scene->mNumCameras << std::endl;
     std::cout << std::endl;
 
+
     // Lights
     for (unsigned i = 0; i < scene->mNumLights; ++i) {
-        auto& light = *scene->mLights[i];
+        auto &light = *scene->mLights[i];
         std::cout << "\tLight " << light.mName.C_Str() << std::endl;
         std::cout << "\t\tAttenuation constant: " << light.mAttenuationConstant << std::endl;
-        std::cout << "\t\tAttenuation linear  : " << light.mAttenuationLinear   << std::endl;
+        std::cout << "\t\tAttenuation linear  : " << light.mAttenuationLinear << std::endl;
         std::cout << "\t\tAttenuation quad    : " << light.mAttenuationQuadratic << std::endl;
-        std::cout << "\t\tLight position      : " << light.mPosition.x << " " << light.mPosition.y << " " << light.mPosition.z << std::endl;
+        std::cout << "\t\tLight position      : " << light.mPosition.x << " " << light.mPosition.y << " "
+                  << light.mPosition.z << std::endl;
     }
     std::cout << std::endl;
 
     unsigned verticesCount = 0;
-    unsigned indicesCount  = 0;
+    unsigned indicesCount = 0;
 
     // Calculate vertices, indices count and their offsets in every mesh entry
     for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
@@ -87,16 +91,18 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
         );
 
         verticesCount += scene->mMeshes[i]->mNumVertices;
-        indicesCount  += mesh_entries.back()._indices_count;
+        indicesCount += mesh_entries.back()._indices_count;
     }
     std::cout << "Total vertices: " << verticesCount << std::endl;
-    std::cout << "Total indices : " << indicesCount  << std::endl << std::endl;
+    std::cout << "Total indices : " << indicesCount << std::endl << std::endl;
 
     // Reserve memory for vertices and indices
     positions.reserve(verticesCount);
-    uvs      .reserve(verticesCount);
-    normals  .reserve(verticesCount);
-    indices  .reserve(indicesCount );
+    uvs.reserve(verticesCount);
+    normals.reserve(verticesCount);
+    tangents.reserve(verticesCount);
+    bitangents.reserve(verticesCount);
+    indices.reserve(indicesCount);
 
     // Load vertices and indices
     for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
@@ -105,15 +111,16 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     }
 
     // Init materials
-    textures.reserve(scene->mNumMaterials);
+    textures.resize(scene->mNumMaterials);
+    textures_normals.resize(scene->mNumMaterials);
     for (unsigned i = 0; i < scene->mNumMaterials; ++i) {
         std::cout << "Load material[" << i << "]..." << std::endl;
         auto material = scene->mMaterials[i];
         std::cout << "\tName: " << material->GetName().data << std::endl;
 
-        auto diffuseCount    = material->GetTextureCount(aiTextureType_DIFFUSE);
-        auto normalCount     = material->GetTextureCount(aiTextureType_NORMALS);
-        auto specularCount   = material->GetTextureCount(aiTextureType_SPECULAR);
+        auto diffuseCount = material->GetTextureCount(aiTextureType_DIFFUSE);
+        auto normalCount = material->GetTextureCount(aiTextureType_NORMALS);
+        auto specularCount = material->GetTextureCount(aiTextureType_SPECULAR);
 
         std::cout << "\tDiffuse count:    " << diffuseCount << std::endl;
         std::cout << "\tNormal count:     " << normalCount << std::endl;
@@ -124,12 +131,20 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
             auto path = aiString();
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
                 std::cout << "\t\tLoad diffuse " << path.C_Str() << std::endl;
-                textures.emplace_back(path.data);
-            }
-            else
-                textures.emplace_back();
+                textures[i] = grx::Texture(path.data);
+            } else
+                textures[i] = grx::Texture();
         } else {
             // Todo: set dummy texture
+        }
+
+        if (normalCount > 0) {
+            auto path = aiString();
+            if (material->GetTexture(aiTextureType_NORMALS, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::cout << "\t\tLoad normals " << path.C_Str() << std::endl;
+                textures_normals.emplace_back(path.data);
+            } else
+                textures_normals.emplace_back();
         }
     }
 
@@ -150,14 +165,25 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     glEnableVertexAttribArray(NORMAL_LOCATION);
     glVertexAttribPointer(NORMAL_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
+    glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[TANGENT_VB]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex::TangentT) * tangents.size(), tangents.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(TANGENT_LOCATION);
+    glVertexAttribPointer(TANGENT_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[BITANGENT_VB]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex::BitangentT) * bitangents.size(), bitangents.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(BITANGENT_LOCATION);
+    glVertexAttribPointer(BITANGENT_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _glBuffers[INDEX_BUFFER]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(decltype(indices)::value_type) * indices.size(), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(decltype(indices)::value_type) * indices.size(), indices.data(),
+                 GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[MVP_MATRIX_VB]);
     for (unsigned i = 0; i < 4; ++i) {
         glEnableVertexAttribArray(MVP_MATRIX_LOCATION + i);
         glVertexAttribPointer(MVP_MATRIX_LOCATION + i, 4, GL_FLOAT, GL_FALSE,
-                sizeof(glm::mat4), (GLvoid*)(sizeof(GLfloat) * i * 4));
+                              sizeof(glm::mat4), (GLvoid *) (sizeof(GLfloat) * i * 4));
         glVertexAttribDivisor(MVP_MATRIX_LOCATION + i, 1);
     }
 
@@ -165,7 +191,7 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     for (unsigned i = 0; i < 4; ++i) {
         glEnableVertexAttribArray(MODEL_MATRIX_LOCATION + i);
         glVertexAttribPointer(MODEL_MATRIX_LOCATION + i, 4, GL_FLOAT, GL_FALSE,
-                sizeof(glm::mat4), (GLvoid*)(sizeof(GLfloat) * i * 4));
+                              sizeof(glm::mat4), (GLvoid *) (sizeof(GLfloat) * i * 4));
         glVertexAttribDivisor(MODEL_MATRIX_LOCATION + i, 1);
     }
 
@@ -226,6 +252,11 @@ void grx::Mesh::initMesh(const aiMesh* mesh, UnpackedVertexVector& vertices, std
                     mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
         else
             std::get<Vertex::UV>(vertices).emplace_back(0.f, 0.f);
+
+        std::get<Vertex::TANGENT>(vertices).emplace_back(
+                mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+        std::get<Vertex::BITANGENT>(vertices).emplace_back(
+                mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
     }
         /*
             vertices.emplace_back(
@@ -298,23 +329,31 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     sp.uniform("_MVP", MVP);
     sp.uniform("_M",   model);
     sp.uniform("_textureSampler", 0);
+    sp.uniform("_normal_map", 1);
 
     glBindVertexArray(_glVAO);
 
     for (auto& me : mesh_entries) {
         auto materialIndex = me._material_index;
 
-        if (materialIndex < textures.size() && textures[materialIndex].valid()) {
-            glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
+        if (materialIndex < textures.size() && textures[materialIndex].valid())
             textures[materialIndex].bind();
-        }
+        else
+            grx::texture_manager().bindDummyDiffuse();
+
+        glActiveTexture(GL_TEXTURE1);
+        if (materialIndex < textures_normals.size() && textures_normals[materialIndex].valid())
+            textures_normals[materialIndex].bind();
+        else
+            grx::texture_manager().bindDummyNormalMap();
 
         glDrawElementsBaseVertex(
-                GL_TRIANGLES,
-                me._indices_count,
-                GL_UNSIGNED_INT,
-                (void*)(sizeof(decltype(me._start_index_pos)) * me._start_index_pos),
-                me._start_vertex_pos);
+            GL_TRIANGLES,
+            me._indices_count,
+            GL_UNSIGNED_INT,
+            (void*)(sizeof(decltype(me._start_index_pos)) * me._start_index_pos),
+            me._start_vertex_pos);
     }
 
     glBindVertexArray(0);
@@ -341,6 +380,7 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     }
 
     sp.uniform("_textureSampler", 0);
+    sp.uniform("_normal_map", 1);
 
     glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[MVP_MATRIX_VB]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * instancesNum, mvps.data(), GL_DYNAMIC_DRAW);
@@ -353,10 +393,17 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     for (auto& me : mesh_entries) {
         auto materialIndex = me._material_index;
 
-        if (materialIndex < textures.size() && textures[materialIndex].valid()) {
-            glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
+        if (materialIndex < textures.size() && textures[materialIndex].valid())
             textures[materialIndex].bind();
-        }
+        else
+            grx::texture_manager().bindDummyDiffuse();
+
+        glActiveTexture(GL_TEXTURE1);
+        if (materialIndex < textures_normals.size() && textures_normals[materialIndex].valid())
+            textures_normals[materialIndex].bind();
+        else
+            grx::texture_manager().bindDummyNormalMap();
 
         glDrawElementsInstancedBaseVertex(
                 GL_TRIANGLES,

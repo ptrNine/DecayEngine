@@ -18,11 +18,18 @@ namespace grx_txtr {
         unsigned load   (const std::string& path);
         void     destroy(const std::string& path);
 
+        void bindDummyDiffuse();
+        void bindDummyNormalMap();
+
     protected:
         static unsigned loadIL      (const std::string& path);
         static unsigned loadTexture (const std::string& path);
 
         ska::flat_hash_map<std::string, TextureParam> textures;
+
+
+        unsigned _dummy_diffuse;
+        unsigned _dummy_normal_map;
 
     DE_MARK_AS_SINGLETON(TextureManager);
     };
@@ -50,6 +57,18 @@ namespace grx {
         ~Texture() {
             if (glID)
                 texture_manager().destroy(_name);
+        }
+
+        Texture& operator=(const Texture& t) noexcept {
+            glID = texture_manager().load(t._name);
+            return *this;
+        }
+
+        Texture& operator=(Texture&& t) noexcept {
+            _name = std::move(t._name);
+            glID  = t.glID;
+            t.glID = 0; // invalidate
+            return *this;
         }
 
         void bind();

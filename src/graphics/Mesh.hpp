@@ -20,24 +20,35 @@ namespace mesh_impl {
 
         Vertex(const aiVector3D& _pos,
                const aiVector3D& _normals,
-               const aiVector3D& _uv
+               const aiVector3D& _uv,
+               const aiVector3D& _tangent,
+               const aiVector3D& _bitangent
             ):      pos      (_pos.x, _pos.y, _pos.z),
                     normals  (_normals.x, _normals.y, _normals.z),
-                    uv       (_uv.x, _uv.y)
+                    uv       (_uv.x, _uv.y),
+                    tangent  (_tangent.x, _tangent.y, _tangent.z),
+                    bitangent(_bitangent.x, _bitangent.y, _bitangent.z)
         {}
 
     public:
         glm::vec3 pos;
         glm::vec2 uv;
         glm::vec3 normals;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
 
-        using PositionT = decltype(pos);
-        using UVT       = decltype(uv);
-        using NormalT   = decltype(normals);
+        using PositionT  = decltype(pos);
+        using UVT        = decltype(uv);
+        using NormalT    = decltype(normals);
+        using TangentT   = decltype(tangent);
+        using BitangentT = decltype(bitangent);
+
         enum DataIndex {
             POSITION = 0,
             UV,
-            NORMAL
+            NORMAL,
+            TANGENT,
+            BITANGENT
         };
     };
 
@@ -76,7 +87,9 @@ namespace grx {
         using UnpackedVertexVector = std::tuple<
                 std::vector<Vertex::PositionT>,
                 std::vector<Vertex::UVT>,
-                std::vector<Vertex::NormalT>>;
+                std::vector<Vertex::NormalT>,
+                std::vector<Vertex::TangentT>,
+                std::vector<Vertex::BitangentT>>;
 
         using MeshEntry    = mesh_impl::MeshEntry;
         //using Bone         = mesh_impl::Bone;
@@ -96,23 +109,35 @@ namespace grx {
             render(view_projection.first, view_projection.second, shader_program, instances);
         }
 
+        void addNormals(unsigned materialID, const grx::Texture& texture) {
+            if (textures_normals.size() <= materialID)
+                textures_normals.resize(materialID + 1);
+
+            textures_normals[materialID] = texture;
+        }
+
         glm::vec3 pos = {0.f, 0.f, 0.f};
 
         enum BufferNumbers {
-            INDEX_BUFFER = 0,
-            POSITION_VB = 1,
-            NORMAL_VB = 2,
-            UV_VB = 3,
-            MVP_MATRIX_VB = 4,
-            MODEL_MATRIX_VB = 5
+            INDEX_BUFFER      = 0,
+            POSITION_VB       = 1,
+            NORMAL_VB         = 2,
+            UV_VB             = 3,
+            TANGENT_VB        = 4,
+            BITANGENT_VB      = 5,
+            MVP_MATRIX_VB     = 6,
+            MODEL_MATRIX_VB   = 7,
+            BufferNumbersSize = 8
         };
 
         enum AttributesLocation {
-            POSITION_LOCATION = 0,
-            UV_LOCATION = 1,
-            NORMAL_LOCATION = 2,
-            MVP_MATRIX_LOCATION = 3,
-            MODEL_MATRIX_LOCATION = 7
+            POSITION_LOCATION     = 0,
+            UV_LOCATION           = 1,
+            NORMAL_LOCATION       = 2,
+            TANGENT_LOCATION      = 3,
+            BITANGENT_LOCATION    = 4,
+            MVP_MATRIX_LOCATION   = 5,
+            MODEL_MATRIX_LOCATION = 9
         };
 
     protected:
@@ -121,7 +146,8 @@ namespace grx {
 
         std::vector<MeshEntry> mesh_entries;
         std::vector<grx::Texture>  textures;
-        std::array <unsigned, 6> _glBuffers;
+        std::vector<grx::Texture>  textures_normals;
+        std::array <unsigned, BufferNumbersSize> _glBuffers;
         glm::vec3 _aa = {0.f, 0.f, 0.f};
         glm::vec3 _bb = {0.f, 0.f, 0.f};
 

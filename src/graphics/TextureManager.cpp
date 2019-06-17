@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <IL/il.h>
 #include <cstring>
@@ -57,12 +58,12 @@ unsigned grx_txtr::TextureManager::loadIL(const std::string& path) {
 
         glBindTexture(GL_TEXTURE_2D, texId);
 
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ilGetInteger(IL_IMAGE_WIDTH),
                      ilGetInteger(IL_IMAGE_HEIGHT), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                      ilGetData());
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
         ilDeleteImage(imgID);\
         return texId;
@@ -75,6 +76,9 @@ unsigned grx_txtr::TextureManager::loadTexture(const std::string& path) {
 
 grx_txtr::TextureManager:: TextureManager() {
     ilInit();
+
+    _dummy_diffuse    = load("dummy.tga");
+    _dummy_normal_map = load("dummy_normal_map.png");
 }
 
 grx_txtr::TextureManager::~TextureManager() {
@@ -110,6 +114,14 @@ void grx_txtr::TextureManager::destroy(const std::string& path) {
             textures.erase(path);
         }
     }
+}
+
+void grx_txtr::TextureManager::bindDummyDiffuse() {
+    glBindTexture(GL_TEXTURE_2D, _dummy_diffuse);
+}
+
+void grx_txtr::TextureManager::bindDummyNormalMap() {
+    glBindTexture(GL_TEXTURE_2D, _dummy_normal_map);
 }
 
 void grx::Texture::bind() {
