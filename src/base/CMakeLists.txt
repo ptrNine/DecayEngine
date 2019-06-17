@@ -34,6 +34,7 @@ set(BaseHeaders
         assert.hpp
         defines.hpp
         serialization.hpp
+        fpsCounter.hpp
         )
 
 add_library(DeBase       SHARED ${BaseSources})

@@ -330,8 +330,7 @@ bool frustrum_test(const glm::vec3& min, const glm::vec3& max, const std::array<
     return pass;
 }
 
-void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::ShaderProgram& sp, unsigned instancesNum,
-                       const std::array<glm::vec4, 6>& frustumPlanes) {
+void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::ShaderProgram& sp, unsigned instancesNum) {
     std::vector<glm::mat4> models; models.reserve(instancesNum);
     std::vector<glm::mat4> mvps; mvps.reserve(instancesNum);
 
@@ -341,7 +340,7 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
         mvps.emplace_back(projection * view * models.back());
     }
 
-    sp.uniform("textureSampler", 0);
+    sp.uniform("_textureSampler", 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[MVP_MATRIX_VB]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * instancesNum, mvps.data(), GL_DYNAMIC_DRAW);

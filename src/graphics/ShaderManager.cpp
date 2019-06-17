@@ -132,7 +132,8 @@ grx::ShaderProgram::ShaderProgram(const char* vsp, const char* fsp) {
 int grx::ShaderProgram::getUniformId(const char* name) const {
     auto found = uniforms.find(name);
 
-    // Todo: assert: not found
+    RASSERTF(found != uniforms.end(), "Can't find '{}' uniform!", name);
+
     return found->second;
 }
 
@@ -142,6 +143,7 @@ int grx::ShaderProgram::uniformId(const char* name) {
         return find->second;
     else {
         int id = glGetUniformLocation(_id, name);
+        RASSERTF(id != -1, "Invalid uniform '{}' location", name);
         return uniforms[name] = id;
     }
 }

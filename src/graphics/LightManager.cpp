@@ -30,15 +30,15 @@ dtls_light::LightManager::LightManager() {
         _spot_lights_names[i].attenuation_constant  = ftl::String().sprintf("_spot_lights[{}].base.attenuation.constant", i);
         _spot_lights_names[i].attenuation_linear    = ftl::String().sprintf("_spot_lights[{}].base.attenuation.linear", i);
         _spot_lights_names[i].attenuation_quadratic = ftl::String().sprintf("_spot_lights[{}].base.attenuation.quadratic", i);
-        _spot_lights_names[i].direction             = ftl::String().sprintf("_spot_lights[{}].base.attenuation.quadratic", i);
-        _spot_lights_names[i].cutoff                = ftl::String().sprintf("_spot_lights[{}].base.attenuation.quadratic", i);
+        _spot_lights_names[i].direction             = ftl::String().sprintf("_spot_lights[{}].direction", i);
+        _spot_lights_names[i].cutoff                = ftl::String().sprintf("_spot_lights[{}].cutoff", i);
     }
 }
 
 dtls_light::LightManager::~LightManager() = default;
 
 
-void dtls_light::LightManager::pushToShader(grx::ShaderProgram& program) {
+void dtls_light::LightManager::assignTo(grx::ShaderProgram &program) {
     auto found = _cached_program_uniforms.find(program.id());
 
     if (found != _cached_program_uniforms.end())
@@ -51,7 +51,10 @@ void dtls_light::LightManager::pushToShader(grx::ShaderProgram& program) {
 
 void dtls_light::LightManager::_pushToShader(grx::ShaderProgram& program, const CachedUniforms& uniforms) {
     int plc = 0; // point light counter
-    int spc = 0; // spot light counter
+    int slc = 0; // spot light counter
+
+    program.uniform(uniforms.specular_power,     _specular_power);
+    program.uniform(uniforms.specular_intensity, _specular_intensity);
 
     // Directional light
     if (_directional_light.is_active()) {
@@ -79,24 +82,26 @@ void dtls_light::LightManager::_pushToShader(grx::ShaderProgram& program, const 
     // Spot lights
     for (SizeT i = 0; i < FR_MAX_SPOT_LIGHTS; ++i) {
         if (_spot_lights[i].is_active()) {
-            program.uniform(uniforms.spot_light_uniforms[spc].color,                 _spot_lights[i].color());
-            program.uniform(uniforms.spot_light_uniforms[spc].position,              _spot_lights[i].position());
-            program.uniform(uniforms.spot_light_uniforms[spc].diffuse_intensity,     _spot_lights[i].diffuse_intensity());
-            program.uniform(uniforms.spot_light_uniforms[spc].ambient_intensity,     _spot_lights[i].ambient_intensity());
-            program.uniform(uniforms.spot_light_uniforms[spc].attenuation_constant,  _spot_lights[i].attenuation_constant());
-            program.uniform(uniforms.spot_light_uniforms[spc].attenuation_linear,    _spot_lights[i].attenuation_linear());
-            program.uniform(uniforms.spot_light_uniforms[spc].attenuation_quadratic, _spot_lights[i].attenuation_quadratic());
-            program.uniform(uniforms.spot_light_uniforms[spc].direction,             _spot_lights[i].direction());
-            program.uniform(uniforms.spot_light_uniforms[spc].cutoff,                _spot_lights[i].cutoff());
-            ++spc;
+            program.uniform(uniforms.spot_light_uniforms[slc].color,                 _spot_lights[i].color());
+            program.uniform(uniforms.spot_light_uniforms[slc].position,              _spot_lights[i].position());
+            program.uniform(uniforms.spot_light_uniforms[slc].diffuse_intensity,     _spot_lights[i].diffuse_intensity());
+            program.uniform(uniforms.spot_light_uniforms[slc].ambient_intensity,     _spot_lights[i].ambient_intensity());
+            program.uniform(uniforms.spot_light_uniforms[slc].attenuation_constant,  _spot_lights[i].attenuation_constant());
+            program.uniform(uniforms.spot_light_uniforms[slc].attenuation_linear,    _spot_lights[i].attenuation_linear());
+            program.uniform(uniforms.spot_light_uniforms[slc].attenuation_quadratic, _spot_lights[i].attenuation_quadratic());
+            program.uniform(uniforms.spot_light_uniforms[slc].direction,             _spot_lights[i].direction());
+            program.uniform(uniforms.spot_light_uniforms[slc].cutoff,                _spot_lights[i].cutoff());
+            ++slc;
         }
     }
-    program.uniform(uniforms.spot_light_count_uniform, spc);
+    program.uniform(uniforms.spot_light_count_uniform, slc);
 }
 
 auto dtls_light::LightManager::_genUniformIDs(grx::ShaderProgram& program) -> CachedUniforms {
     CachedUniforms u;
 
+    u.specular_power            = program.uniformId("_specular_power");
+    u.specular_intensity        = program.uniformId("_mat_specular_intensity");
     u.point_light_count_uniform = program.uniformId("_num_point_lights");
     u.spot_light_count_uniform  = program.uniformId("_num_spot_lights");
 

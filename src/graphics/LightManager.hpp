@@ -10,12 +10,13 @@
 #include "ftl/string.hpp"
 
 namespace grx {
+
     class LightBase {
     protected:
-        glm::vec3 _color;
-        float     _ambient_intensity;
-        float     _diffuse_intensity;
-        bool      _is_active = false;
+        glm::vec3 _color             = {1.f, 1.f, 1.f};
+        float     _ambient_intensity = 0.1f;
+        float     _diffuse_intensity = 0.9f;
+        bool      _is_active         = false;
 
     public:
         DE_DEFINE_GETSET(_color, color);
@@ -84,13 +85,14 @@ namespace grx {
     public:
         explicit
         SpotLight(const glm::vec3& position = {0.f, 0.f, 0.f},
-                  const glm::vec3& direction = {0.f, 0.f, -1.f},
-                  float cutoff = 1.f,
+                  const glm::vec3& direction = {0.f, -1.f, 0.f},
+                  float cutoff = 0.4f,
                   const glm::vec3& color  = {1.f, 1.f, 1.f},
                   float ambient_intencity = 0.1f,
                   float diffuse_intencity = 0.9): _direction(direction), _cutoff(cutoff)
         {
-            _color = color;
+            _position          = position;
+            _color             = color;
             _ambient_intensity = ambient_intencity;
             _diffuse_intensity = diffuse_intencity;
         }
@@ -103,7 +105,8 @@ namespace grx {
         DE_DEFINE_GETSET(_direction, direction);
         DE_DEFINE_GETSET(_cutoff, cutoff);
     };
-}
+
+} // namespace grx
 
 namespace grx {
     class DirLightProvider;
@@ -123,38 +126,16 @@ namespace dtls_light {
         static constexpr SizeT FR_MAX_SPOT_LIGHTS  = 16;
 
     public:
-        int addPointLight(const grx::PointLight& light) {
-            for (int i = 0; i < FR_MAX_POINT_LIGHTS; ++i) {
-                if (!_point_lights[i].is_active()) {
-                    _point_lights[i] = light;
-                    _point_lights[i].is_active() = true;
-                    return i;
-                }
-            }
-
-            base::Log("Attempt to create more then {} point light sources!", FR_MAX_POINT_LIGHTS);
-            return FR_MAX_POINT_LIGHTS;
-        }
-
-        int addSpotLight(const grx::SpotLight& light) {
-            for (int i = 0; i < FR_MAX_SPOT_LIGHTS; ++i) {
-                if (!_spot_lights[i].is_active()) {
-                    _spot_lights[i] = light;
-                    _spot_lights[i].is_active() = true;
-                    return i;
-                }
-            }
-
-            base::Log("Attempt to create more then {} spot light sources!", FR_MAX_SPOT_LIGHTS);
-            return FR_MAX_SPOT_LIGHTS;
-        }
-
-        void pushToShader(grx::ShaderProgram& program);
+        void assignTo(grx::ShaderProgram &program);
 
     protected:
-        grx::DirectionalLight _directional_light;
+        float _specular_power     = 0.f;
+        float _specular_intensity = 0.f;
+
+        grx::DirectionalLight                                _directional_light;
         std::array<grx::PointLight, FR_MAX_POINT_LIGHTS + 1> _point_lights;
         std::array<grx::SpotLight,  FR_MAX_SPOT_LIGHTS + 1>  _spot_lights;
+
 
 
 
@@ -222,20 +203,53 @@ namespace dtls_light {
             std::array<SpotLightUniformIDs,  FR_MAX_POINT_LIGHTS> spot_light_uniforms;
             int point_light_count_uniform;
             int spot_light_count_uniform;
+            int specular_power;
+            int specular_intensity;
         };
 
         std::array<PointLightNames, FR_MAX_POINT_LIGHTS> _point_lights_names;
         std::array<SpotLightNames,  FR_MAX_SPOT_LIGHTS>  _spot_lights_names;
-
         ska::flat_hash_map<unsigned, CachedUniforms> _cached_program_uniforms;
 
     protected:
+        int addPointLight(const grx::PointLight& light) {
+            for (int i = 0; i < FR_MAX_POINT_LIGHTS; ++i) {
+                if (!_point_lights[i].is_active()) {
+                    _point_lights[i] = light;
+                    _point_lights[i].is_active() = true;
+                    return i;
+                }
+            }
+
+            base::Log("Attempt to create more then {} point light sources!", FR_MAX_POINT_LIGHTS);
+            return FR_MAX_POINT_LIGHTS;
+        }
+
+        int addSpotLight(const grx::SpotLight& light) {
+            for (int i = 0; i < FR_MAX_SPOT_LIGHTS; ++i) {
+                if (!_spot_lights[i].is_active()) {
+                    _spot_lights[i] = light;
+                    _spot_lights[i].is_active() = true;
+                    return i;
+                }
+            }
+
+            base::Log("Attempt to create more then {} spot light sources!", FR_MAX_SPOT_LIGHTS);
+            return FR_MAX_SPOT_LIGHTS;
+        }
+
         void _pushToShader (grx::ShaderProgram& program, const CachedUniforms& uniforms);
         auto _genUniformIDs(grx::ShaderProgram& program) -> CachedUniforms;
 
+
+    public:
+        DE_DEFINE_GETSET(_specular_power, specular_power);
+        DE_DEFINE_GETSET(_specular_intensity, specular_intensity);
+
         DE_MARK_AS_SINGLETON(LightManager);
     };
-}
+
+} // namespace dtls_light
 
 
 namespace grx {
@@ -254,6 +268,12 @@ namespace grx {
             light_manager()._directional_light.is_active() = true;
         }
 
+        DirectionalLight& get() {
+            return light_manager()._directional_light;
+        }
+
+        DirectionalLight* operator->() { return &get(); }
+
         ~DirLightProvider() {
             light_manager()._directional_light.is_active() = false;
         }
@@ -269,9 +289,10 @@ namespace grx {
             light_manager()._point_lights[id].is_active() = false;
         }
 
-        auto& get() {
+        PointLight& get() {
             return light_manager()._point_lights[id];
         }
+        PointLight* operator->() { return &get(); }
 
     protected:
         int id;
@@ -287,13 +308,13 @@ namespace grx {
             light_manager()._spot_lights[id].is_active() = false;
         }
 
-        auto& get() {
+        SpotLight& get() {
             return light_manager()._spot_lights[id];
         }
+
+        SpotLight* operator->() { return &get(); }
 
     protected:
         int id;
     };
-
-
-}
+} // namespace grx

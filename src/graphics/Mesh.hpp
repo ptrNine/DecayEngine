@@ -90,11 +90,10 @@ namespace grx {
             render(view_projection.first, view_projection.second, shader_program);
         }
 
-        void render(const glm::mat4& view, const glm::mat4& projection, grx::ShaderProgram& shader_program, unsigned instances,
-                const std::array<glm::vec4, 6>& frustumPlanes);
+        void render(const glm::mat4& view, const glm::mat4& projection, grx::ShaderProgram& shader_program, unsigned instances);
 
-        void render(const VP_T& view_projection, grx::ShaderProgram& shader_program, unsigned instances, const std::array<glm::vec4, 6>& frustumPlanes) {
-            render(view_projection.first, view_projection.second, shader_program, instances, frustumPlanes);
+        void render(const VP_T& view_projection, grx::ShaderProgram& shader_program, unsigned instances) {
+            render(view_projection.first, view_projection.second, shader_program, instances);
         }
 
         glm::vec3 pos = {0.f, 0.f, 0.f};
