@@ -30,7 +30,6 @@ namespace grx_txtr {
 } // namespace grx_txtr
 
 
-
 namespace grx {
     inline auto& texture_manager() {
         return grx_txtr::TextureManager::instance();

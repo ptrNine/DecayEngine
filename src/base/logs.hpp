@@ -44,6 +44,8 @@ namespace base {
             auto msg  = ftl::String().sprintf(format, args...);
             auto time = timer().getSystemDateTime().to_string("[hh:mm:ss:xxx]: ");
 
+            std::cout << msg << std::endl;
+
             _fw->write(time).write(msg).write("\n").flush();
 
             if (_isAttachedToJournal)

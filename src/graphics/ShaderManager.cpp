@@ -217,3 +217,7 @@ template <>
 void grx::ShaderProgram::uniform(int ID, const glm::mat4& val) {
     glProgramUniformMatrix4fv(_id, ID, 1, GL_FALSE, &val[0][0]);
 }
+template <>
+void grx::ShaderProgram::uniform(int ID, const glm::vec3& val) {
+    glProgramUniform3f(_id, ID, val.x, val.y, val.z);
+}

@@ -16,7 +16,7 @@
 #include "configs.hpp"
 
 grx::Mesh::Mesh(const char* filepath) {
-    auto readPath = base::fs::to_data_path(base::cfg::read<ftl::String>("models_dir") / std::string_view(filepath));
+    auto realPath = base::fs::to_data_path(base::cfg::read<ftl::String>("models_dir") / std::string_view(filepath));
 
     glGenVertexArrays(1, &_glVAO);
     glBindVertexArray(_glVAO);
@@ -25,13 +25,13 @@ grx::Mesh::Mesh(const char* filepath) {
 
     auto importer = Assimp::Importer();
 
-    auto scene = importer.ReadFile(readPath.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals);
+    auto scene = importer.ReadFile(realPath.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals);
 
     // Todo: assert
     if (!scene)
-        std::cerr << "Error parsing mesh file " << readPath.c_str() << ": " << importer.GetErrorString() << std::endl;
+        std::cerr << "Error parsing mesh file " << realPath.c_str() << ": " << importer.GetErrorString() << std::endl;
 
-    initFromScene(scene, readPath.c_str());
+    initFromScene(scene, realPath.c_str());
 
     glBindVertexArray(0);
 }
@@ -61,6 +61,17 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
     std::cout << "Animations count: " << scene->mNumAnimations << std::endl;
     std::cout << "Lights count      " << scene->mNumLights << std::endl;
     std::cout << "Cameras count     " << scene->mNumCameras << std::endl;
+    std::cout << std::endl;
+
+    // Lights
+    for (unsigned i = 0; i < scene->mNumLights; ++i) {
+        auto& light = *scene->mLights[i];
+        std::cout << "\tLight " << light.mName.C_Str() << std::endl;
+        std::cout << "\t\tAttenuation constant: " << light.mAttenuationConstant << std::endl;
+        std::cout << "\t\tAttenuation linear  : " << light.mAttenuationLinear   << std::endl;
+        std::cout << "\t\tAttenuation quad    : " << light.mAttenuationQuadratic << std::endl;
+        std::cout << "\t\tLight position      : " << light.mPosition.x << " " << light.mPosition.y << " " << light.mPosition.z << std::endl;
+    }
     std::cout << std::endl;
 
     unsigned verticesCount = 0;
@@ -111,8 +122,10 @@ void grx::Mesh::initFromScene(const aiScene* scene, const char* filepath) {
 
         if (diffuseCount > 0) {
             auto path = aiString();
-            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                std::cout << "\t\tLoad diffuse " << path.C_Str() << std::endl;
                 textures.emplace_back(path.data);
+            }
             else
                 textures.emplace_back();
         } else {
@@ -282,17 +295,9 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     auto model = glm::translate(glm::mat4(1), pos);
     auto MVP   = projection * view * model;
 
-    sp.uniform("MVP", MVP);
-    sp.uniform("M",   model);
-    //glUniformMatrix4fv(sp.uniformId("MVP"), 1, GL_FALSE, reinterpret_cast<GLfloat*>(&MVP));
-    //glUniformMatrix4fv(sp.uniformId("M"  ), 1, GL_FALSE, reinterpret_cast<GLfloat*>(&model));
-    sp.uniform("textureSampler", 0);
-
-   //glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[MVP_MATRIX_VB]);
-   //glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), &MVP, GL_DYNAMIC_DRAW);
-
-   //glBindBuffer(GL_ARRAY_BUFFER, _glBuffers[MODEL_MATRIX_VB]);
-   //glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), &model, GL_DYNAMIC_DRAW);
+    sp.uniform("_MVP", MVP);
+    sp.uniform("_M",   model);
+    sp.uniform("_textureSampler", 0);
 
     glBindVertexArray(_glVAO);
 
@@ -313,52 +318,6 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
     }
 
     glBindVertexArray(0);
-    /*
-    glBindVertexArray(_glVAO);
-
-    sp.makeCurrent();
-
-    auto model = glm::translate(glm::mat4(1), pos);
-    sp.uniform("M", model);
-    //sp.uniform("MV", view * model);
-    //sp.uniform("MVP", projection * view * model);
-    sp.uniform("V", view);
-    sp.uniform("P", projection);
-    sp.uniform("textureSampler", 0);
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
-    for (auto& me : mesh_entries) {
-        glBindBuffer(GL_ARRAY_BUFFER, me._vb);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)12);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)20);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, me._ib);
-
-        auto materialIndex = me._material_index;
-
-        if (materialIndex < textures.size() && textures[materialIndex]) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[materialIndex]);
-        }
-        //glDrawRangeElements(GL_TRIANGLES, me._vb, me._vb, me._indices_count, GL_UNSIGNED_INT, nullptr);
-        glDrawElements(GL_TRIANGLES, me._indices_count, GL_UNSIGNED_INT, nullptr);
-        //glDrawElementsBaseVertex
-    }
-
-    // Reset texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    //glBindVertexArray(0);
-     */
 }
 
 bool frustrum_test(const glm::vec3& min, const glm::vec3& max, const std::array<glm::vec4, 6>& planes) {
@@ -368,8 +327,6 @@ bool frustrum_test(const glm::vec3& min, const glm::vec3& max, const std::array<
                  std::max(min.y * plane.y, max.y * plane.y) +
                  std::max(min.z * plane.z, max.z * plane.z) + plane.w) > 0;
 
-
-
     return pass;
 }
 
@@ -377,10 +334,7 @@ void grx::Mesh::render(const glm::mat4& view, const glm::mat4& projection, grx::
                        const std::array<glm::vec4, 6>& frustumPlanes) {
     std::vector<glm::mat4> models; models.reserve(instancesNum);
     std::vector<glm::mat4> mvps; mvps.reserve(instancesNum);
-    //bool pass = frustrum_test(_aa, _bb, frustumPlanes);
 
-    //if (!pass)
-    //    return;
 
     for (unsigned i = 0; i < instancesNum; ++i) {
         models.emplace_back(glm::translate(glm::mat4(1), glm::vec3((i << 2)+4, 0.f, 0.f)));

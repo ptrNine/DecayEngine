@@ -101,6 +101,8 @@ GENERATE_UNIFORM(unsigned int);
 
 template <>
 void grx::ShaderProgram::uniform<glm::mat4>(int, const glm::mat4&);
+template <>
+void grx::ShaderProgram::uniform<glm::vec3>(int, const glm::vec3&);
 
 
 namespace grx {
